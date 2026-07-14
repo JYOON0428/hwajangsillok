@@ -2,6 +2,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 from app.database import get_db
 from app.models import Toilet, Post, Base
 from main import app
@@ -10,7 +11,9 @@ from main import app
 SQLALCHEMY_TEST_DATABASE_URL = "sqlite:///:memory:"
 
 engine = create_engine(
-    SQLALCHEMY_TEST_DATABASE_URL, connect_args={"check_same_thread": False}
+    SQLALCHEMY_TEST_DATABASE_URL,
+    connect_args={"check_same_thread": False},
+    poolclass=StaticPool,
 )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -197,7 +200,8 @@ class TestPosts:
         post_id = create_response.json()["post_id"]
         
         # 삭제
-        response = client.delete(
+        response = client.request(
+            "DELETE",
             f"/api/v1/posts/{post_id}",
             json={"password": "delete123"}
         )

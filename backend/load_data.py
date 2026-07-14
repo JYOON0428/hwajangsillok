@@ -1,293 +1,444 @@
 import csv
+import hashlib
 import json
 import os
-import math
+import time
+from datetime import datetime
+from pathlib import Path
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlencode
+from urllib.request import Request, urlopen
+
 from sqlalchemy.orm import Session
-from app.database import SessionLocal, engine, Base
-from app.models import Toilet, Post, Review
+
+from app.database import Base, SessionLocal, engine
+from app.models import Post, Review, Toilet
+
+BACKEND_ROOT = Path(__file__).resolve().parent
+TOILET_FILE_NAME = "공중화장실정보_서울특별시.csv"
+KAKAO_ADDRESS_SEARCH_URL = "https://dapi.kakao.com/v2/local/search/address.json"
+GEOCODE_CACHE_PATH = BACKEND_ROOT / "data" / "geocode_cache.json"
+
+DEFAULT_CENTER = (37.5665, 126.9780)
+DISTRICT_CENTERS = {
+    "종로구": (37.5735, 126.9788),
+    "중구": (37.5636, 126.9976),
+    "용산구": (37.5326, 126.9905),
+    "성동구": (37.5633, 127.0369),
+    "광진구": (37.5384, 127.0823),
+    "동대문구": (37.5744, 127.0396),
+    "중랑구": (37.6063, 127.0927),
+    "성북구": (37.5894, 127.0167),
+    "강북구": (37.6396, 127.0257),
+    "도봉구": (37.6688, 127.0471),
+    "노원구": (37.6542, 127.0568),
+    "은평구": (37.6027, 126.9291),
+    "서대문구": (37.5791, 126.9368),
+    "마포구": (37.5663, 126.9018),
+    "양천구": (37.5170, 126.8665),
+    "강서구": (37.5509, 126.8495),
+    "구로구": (37.4955, 126.8877),
+    "금천구": (37.4569, 126.8958),
+    "영등포구": (37.5264, 126.8963),
+    "동작구": (37.5124, 126.9393),
+    "관악구": (37.4784, 126.9516),
+    "서초구": (37.4837, 127.0324),
+    "강남구": (37.5172, 127.0473),
+    "송파구": (37.5145, 127.1059),
+    "강동구": (37.5301, 127.1238),
+}
+
+PLACE_CENTERS = {
+    "서울숲": (37.5430715815, 127.0417984460),
+    "강남역": (37.4979, 127.0276),
+    "경복궁": (37.5760307000, 126.9767218661),
+    "국립중앙박물관": (37.5239, 126.9804),
+    "대학로": (37.5805669329, 127.0023878907),
+    "아이파크몰": (37.5298249324, 126.9647566449),
+    "남산": (37.5510545366, 126.9878820833),
+    "명동": (37.5636, 126.9822),
+    "코엑스": (37.5118, 127.0592),
+    "여의도": (37.5268, 126.9237),
+}
+
+SAMPLE_PLACES = [
+    {
+        "name": "서울숲",
+        "lat": 37.5430715815,
+        "lon": 127.0417984460,
+        "category": "관광지",
+        "title": "서울숲 산책 후 쓰기 좋은 화장실",
+        "content": "방문객이 많았지만 내부가 밝고 관리 상태가 안정적이었습니다.",
+        "rating": 4.6,
+        "nickname": "푸른 여행자",
+    },
+    {
+        "name": "경복궁",
+        "lat": 37.5760307000,
+        "lon": 126.9767218661,
+        "category": "관광지",
+        "title": "경복궁 근처 가족 방문 후기",
+        "content": "아이와 함께 이동하기 편했고, 주변 개방화장실 안내도 찾기 쉬웠습니다.",
+        "rating": 4.2,
+        "nickname": "궁궐 산책러",
+    },
+    {
+        "name": "국립중앙박물관",
+        "lat": 37.5239,
+        "lon": 126.9804,
+        "category": "문화시설",
+        "title": "박물관 관람 전 확인한 화장실",
+        "content": "유모차 동선이 무난했고 세면대 주변 관리도 괜찮았습니다.",
+        "rating": 4.8,
+        "nickname": "조용한 관람객",
+    },
+    {
+        "name": "대학로",
+        "lat": 37.5805669329,
+        "lon": 127.0023878907,
+        "category": "축제/공연",
+        "title": "공연 종료 직후에는 조금 혼잡해요",
+        "content": "공연이 끝나는 시간대에는 줄이 생겼지만 회전은 빠른 편이었습니다.",
+        "rating": 3.5,
+        "nickname": "빠른 시민",
+    },
+    {
+        "name": "아이파크몰 용산점",
+        "lat": 37.5298249324,
+        "lon": 126.9647566449,
+        "category": "쇼핑",
+        "title": "용산 쇼핑 동선에서 가까운 화장실",
+        "content": "층별 편차가 있지만 상층부는 비교적 덜 붐비고 깨끗했습니다.",
+        "rating": 4.1,
+        "nickname": "깨끗한 탐험가",
+    },
+    {
+        "name": "강남역",
+        "lat": 37.4979,
+        "lon": 127.0276,
+        "category": "쇼핑",
+        "title": "강남역 주변 급할 때 참고",
+        "content": "역 주변은 혼잡하지만 비상벨과 장애인용 시설이 있는 곳을 찾을 수 있었습니다.",
+        "rating": 3.8,
+        "nickname": "도시 산책자",
+    },
+]
 
 
-def calculate_distance(lat1, lon1, lat2, lon2):
-    """하버사인 공식으로 거리 계산 (미터)"""
-    R = 6371000  # 지구 반지름 (미터)
-    
-    lat1_rad = math.radians(lat1)
-    lat2_rad = math.radians(lat2)
-    delta_lat = math.radians(lat2 - lat1)
-    delta_lon = math.radians(lon2 - lon1)
-    
-    a = math.sin(delta_lat / 2) ** 2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(delta_lon / 2) ** 2
-    c = 2 * math.asin(math.sqrt(a))
-    
-    return R * c
+def load_local_env() -> None:
+    env_path = BACKEND_ROOT / ".env"
+    if not env_path.exists():
+        return
 
-
-def find_nearest_toilet(db: Session, latitude: float, longitude: float, max_distance: float = 2000):
-    """좌표 기반으로 가장 가까운 화장실 찾기"""
-    toilets = db.query(Toilet).all()
-    
-    nearest = None
-    nearest_distance = max_distance
-    
-    for toilet in toilets:
-        if toilet.latitude == 0 or toilet.longitude == 0:
+    for raw_line in env_path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
             continue
-        
-        distance = calculate_distance(latitude, longitude, toilet.latitude, toilet.longitude)
-        
-        if distance < nearest_distance:
+        key, value = line.split("=", 1)
+        os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+
+
+load_local_env()
+
+
+def int_value(raw: str | None) -> int:
+    try:
+        return int(str(raw or "0").strip() or 0)
+    except ValueError:
+        return 0
+
+
+def yes(raw: str | None) -> bool:
+    return str(raw or "").strip().upper() == "Y"
+
+
+def fallback_coordinates_for(address: str, name: str) -> tuple[float, float]:
+    searchable = f"{address} {name}"
+    base = DEFAULT_CENTER
+    jitter_scale = (0.018, 0.024)
+    for place, center in PLACE_CENTERS.items():
+        if place in searchable:
+            base = center
+            jitter_scale = (0.004, 0.006)
+            break
+    else:
+        for district, center in DISTRICT_CENTERS.items():
+            if district in address:
+                base = center
+                break
+
+    digest = hashlib.sha1(f"{address}|{name}".encode("utf-8")).hexdigest()
+    lat_seed = int(digest[:6], 16) / 0xFFFFFF
+    lon_seed = int(digest[6:12], 16) / 0xFFFFFF
+    lat_offset = (lat_seed - 0.5) * jitter_scale[0]
+    lon_offset = (lon_seed - 0.5) * jitter_scale[1]
+    return round(base[0] + lat_offset, 8), round(base[1] + lon_offset, 8)
+
+
+def load_geocode_cache() -> dict[str, dict]:
+    if not GEOCODE_CACHE_PATH.exists():
+        return {}
+    try:
+        return json.loads(GEOCODE_CACHE_PATH.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return {}
+
+
+def save_geocode_cache(cache: dict[str, dict]) -> None:
+    GEOCODE_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    GEOCODE_CACHE_PATH.write_text(
+        json.dumps(cache, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+
+def kakao_geocode(address: str, cache: dict[str, dict]) -> dict | None:
+    rest_api_key = os.getenv("KAKAO_REST_API_KEY", "").strip()
+    if not rest_api_key:
+        return None
+
+    query = address.strip()
+    if not query:
+        return None
+    if query in cache:
+        cached = cache[query]
+        return cached if cached.get("status") == "ok" else None
+
+    params = urlencode({"query": query, "size": 1})
+    request = Request(
+        f"{KAKAO_ADDRESS_SEARCH_URL}?{params}",
+        headers={"Authorization": f"KakaoAK {rest_api_key}"},
+        method="GET",
+    )
+
+    try:
+        with urlopen(request, timeout=8) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except (HTTPError, URLError, TimeoutError, json.JSONDecodeError) as exc:
+        cache[query] = {
+            "source": "kakao",
+            "status": "error",
+            "message": str(exc),
+        }
+        return None
+
+    documents = payload.get("documents") or []
+    if not documents:
+        cache[query] = {
+            "source": "kakao",
+            "status": "not_found",
+        }
+        return None
+
+    document = documents[0]
+    result = {
+        "source": "kakao",
+        "status": "ok",
+        "latitude": float(document["y"]),
+        "longitude": float(document["x"]),
+        "address": document.get("address_name") or query,
+    }
+    cache[query] = result
+
+    delay = float(os.getenv("KAKAO_GEOCODE_DELAY", "0.03") or 0)
+    if delay > 0:
+        time.sleep(delay)
+    return result
+
+
+def coordinates_for(address: str, name: str, cache: dict[str, dict]) -> dict:
+    geocoded = kakao_geocode(address, cache)
+    if geocoded:
+        return {
+            "latitude": geocoded["latitude"],
+            "longitude": geocoded["longitude"],
+            "geocoded_address": geocoded["address"],
+            "geocode_source": "kakao",
+            "geocode_status": "ok",
+        }
+
+    latitude, longitude = fallback_coordinates_for(address, name)
+    status = "no_api_key" if not os.getenv("KAKAO_REST_API_KEY", "").strip() else "fallback"
+    return {
+        "latitude": latitude,
+        "longitude": longitude,
+        "geocoded_address": None,
+        "geocode_source": "fallback",
+        "geocode_status": status,
+    }
+
+
+def resolve_csv_path() -> Path:
+    candidates = [
+        os.getenv("TOILET_CSV_PATH"),
+        BACKEND_ROOT / "data" / "toilet" / TOILET_FILE_NAME,
+        Path.home() / "Desktop" / "dataset" / "toilet" / TOILET_FILE_NAME,
+    ]
+    for candidate in candidates:
+        if not candidate:
+            continue
+        path = Path(candidate)
+        if path.exists():
+            return path
+    raise FileNotFoundError("공중화장실 CSV 파일을 찾지 못했습니다.")
+
+
+def open_csv(path: Path):
+    for encoding in ("utf-8-sig", "cp949"):
+        try:
+            handle = path.open("r", encoding=encoding, newline="")
+            handle.readline()
+            handle.seek(0)
+            return handle
+        except UnicodeDecodeError:
+            continue
+    return path.open("r", encoding="utf-8", newline="")
+
+
+def reset_database() -> None:
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+
+
+def load_toilet_data(csv_file_path: Path) -> int:
+    db = SessionLocal()
+    count = 0
+    cache = load_geocode_cache()
+    kakao_count = 0
+    fallback_count = 0
+    try:
+        with open_csv(csv_file_path) as handle:
+            reader = csv.DictReader(handle)
+            for row in reader:
+                name = (row.get("화장실명") or "").strip()
+                address = (row.get("소재지도로명주소") or row.get("소재지지번주소") or "").strip()
+                if not name or not address:
+                    continue
+
+                coordinate = coordinates_for(address, name, cache)
+                if coordinate["geocode_source"] == "kakao":
+                    kakao_count += 1
+                else:
+                    fallback_count += 1
+                disabled_count = sum(
+                    int_value(row.get(column))
+                    for column in (
+                        "남성용-장애인용대변기수",
+                        "남성용-장애인용소변기수",
+                        "여성용-장애인용대변기수",
+                    )
+                )
+
+                toilet = Toilet(
+                    name=name,
+                    address=address,
+                    latitude=coordinate["latitude"],
+                    longitude=coordinate["longitude"],
+                    male_toilet_count=int_value(row.get("남성용-대변기수")),
+                    female_toilet_count=int_value(row.get("여성용-대변기수")),
+                    male_urinal_count=int_value(row.get("남성용-소변기수")),
+                    female_urinal_count=0,
+                    handicap_facility=disabled_count > 0,
+                    emergency_bell=yes(row.get("비상벨설치여부")),
+                    diaper_changing_table=yes(row.get("기저귀교환대유무")),
+                    phone=(row.get("전화번호") or "").strip() or None,
+                    opening_hours=(row.get("개방시간") or "").strip() or None,
+                    open_time_detail=(row.get("개방시간상세") or "").strip() or None,
+                    data_reference_date=(row.get("데이터기준일자") or "").strip() or None,
+                    entrance_cctv=yes(row.get("화장실입구CCTV설치유무")),
+                    toilet_type=(row.get("구분명") or "").strip() or None,
+                    managing_agency=(row.get("관리기관명") or "").strip() or None,
+                    geocoded_address=coordinate["geocoded_address"],
+                    geocode_source=coordinate["geocode_source"],
+                    geocode_status=coordinate["geocode_status"],
+                )
+                db.add(toilet)
+                count += 1
+                if count % 500 == 0:
+                    db.commit()
+                    save_geocode_cache(cache)
+                    print(f"Loaded {count} toilets...")
+
+        db.commit()
+        save_geocode_cache(cache)
+        print(f"Geocoded by Kakao: {kakao_count}, fallback: {fallback_count}")
+        return count
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+
+def distance_meters(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    import math
+
+    lon1, lat1, lon2, lat2 = map(math.radians, [lon1, lat1, lon2, lat2])
+    dlon = lon2 - lon1
+    dlat = lat2 - lat1
+    a = math.sin(dlat / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2) ** 2
+    return 6371000 * 2 * math.asin(math.sqrt(a))
+
+
+def find_nearest_toilet(db: Session, latitude: float, longitude: float) -> Toilet | None:
+    nearest = None
+    nearest_distance = float("inf")
+    for toilet in db.query(Toilet).all():
+        current = distance_meters(latitude, longitude, toilet.latitude, toilet.longitude)
+        if current < nearest_distance:
             nearest = toilet
-            nearest_distance = distance
-    
+            nearest_distance = current
     return nearest
 
 
-def load_toilet_data(csv_file_path: str):
-    """
-    공중화장실 CSV 데이터 로드
-    """
+def load_sample_posts() -> int:
     db = SessionLocal()
-    
     try:
-        with open(csv_file_path, 'r', encoding='cp949') as f:
-            reader = csv.DictReader(f)
-            count = 0
-            
-            for row in reader:
-                try:
-                    # CSV 컬럼 매핑
-                    toilet = Toilet(
-                        name=row.get('화장실명', '').strip(),
-                        address=row.get('도로명주소', '').strip() or row.get('지번주소', '').strip(),
-                        latitude=float(row.get('위도', 0) or 0),
-                        longitude=float(row.get('경도', 0) or 0),
-                        male_toilet_count=int(row.get('남성-대변기', 0) or 0),
-                        female_toilet_count=int(row.get('여성-대변기', 0) or 0),
-                        male_urinal_count=int(row.get('남성-소변기', 0) or 0),
-                        female_urinal_count=int(row.get('여성-소변기', 0) or 0),
-                        handicap_facility=row.get('장애인화장실-대변기', 0) != '0' and row.get('장애인화장실-대변기', '').strip() != '',
-                        emergency_bell=row.get('비상벨설치유무', 'N') == 'Y',
-                        diaper_changing_table=row.get('기저귀교환대설치유무', 'N') == 'Y',
-                        phone=row.get('전화번호', '').strip() or None
-                    )
-                    
-                    db.add(toilet)
-                    count += 1
-                    
-                    if count % 100 == 0:
-                        db.commit()
-                        print(f"Loaded {count} toilets...")
-                
-                except Exception as e:
-                    print(f"Error loading row: {e}")
-                    continue
-            
-            db.commit()
-            print(f"Total {count} toilets loaded successfully!")
-    
-    except Exception as e:
-        print(f"Error loading toilet data: {e}")
-        db.rollback()
-    
-    finally:
-        db.close()
-
-
-def load_test_toilets_and_posts():
-    """
-    테스트용 화장실 데이터 및 관광지 게시글 로드
-    주요 관광지 주변에 화장실 데이터 생성
-    """
-    db = SessionLocal()
-    
-    try:
-        # 서울 주요 관광지 좌표 및 테스트 화장실 데이터
-        test_locations = [
-            {
-                "location": "서울 타워",
-                "base_lat": 37.5512,
-                "base_lon": 126.9882,
-                "toilets": [
-                    {"name": "남산타워 공중화장실", "offset_lat": 0.0001, "offset_lon": 0.0001},
-                    {"name": "남산공원 입구 화장실", "offset_lat": -0.0002, "offset_lon": 0.0002},
-                    {"name": "남산 정상 공중화장실", "offset_lat": 0.0002, "offset_lon": -0.0001},
-                ]
-            },
-            {
-                "location": "강남역",
-                "base_lat": 37.4979,
-                "base_lon": 127.0276,
-                "toilets": [
-                    {"name": "강남역 지하상가 화장실", "offset_lat": 0.0001, "offset_lon": 0.0001},
-                    {"name": "강남역 광장 공중화장실", "offset_lat": -0.0001, "offset_lon": -0.0001},
-                    {"name": "강남 COEX 화장실", "offset_lat": 0.0002, "offset_lon": 0.0002},
-                ]
-            },
-            {
-                "location": "국립박물관",
-                "base_lat": 37.5266,
-                "base_lon": 126.9805,
-                "toilets": [
-                    {"name": "국립박물관 주출입구 화장실", "offset_lat": 0.0001, "offset_lon": 0.0001},
-                    {"name": "국립박물관 야외광장 화장실", "offset_lat": -0.0001, "offset_lon": 0.0001},
-                ]
-            },
-            {
-                "location": "경복궁",
-                "base_lat": 37.5795,
-                "base_lon": 126.9770,
-                "toilets": [
-                    {"name": "경복궁 정문 공중화장실", "offset_lat": 0.0001, "offset_lon": 0.0001},
-                    {"name": "경복궁 내부 화장실", "offset_lat": 0.0002, "offset_lon": 0.0002},
-                ]
-            },
-            {
-                "location": "명동",
-                "base_lat": 37.5629,
-                "base_lon": 126.9846,
-                "toilets": [
-                    {"name": "명동거리 공중화장실", "offset_lat": 0.0001, "offset_lon": 0.0001},
-                    {"name": "명동 쇼핑몰 화장실", "offset_lat": -0.0001, "offset_lon": 0.0001},
-                ]
-            },
-        ]
-        
-        posts_to_add = []
-        
-        for loc_data in test_locations:
-            location_name = loc_data["location"]
-            base_lat = loc_data["base_lat"]
-            base_lon = loc_data["base_lon"]
-            
-            # 각 관광지별 화장실 생성 및 게시글 연결
-            for toilet_data in loc_data["toilets"]:
-                toilet = Toilet(
-                    name=toilet_data["name"],
-                    address=f"서울 {location_name} 근처",
-                    latitude=base_lat + toilet_data["offset_lat"],
-                    longitude=base_lon + toilet_data["offset_lon"],
-                    male_toilet_count=2,
-                    female_toilet_count=2,
-                    male_urinal_count=1,
-                    female_urinal_count=0,
-                    handicap_facility=True,
-                    emergency_bell=True,
-                    diaper_changing_table=True,
-                    phone="02-1234-5678"
-                )
-                db.add(toilet)
-                db.flush()  # ID 생성
-                
-                # 해당 화장실에 대한 게시글 생성
-                post = Post(
-                    category="관광지",
-                    title=f"{location_name} 근처 화장실 후기",
-                    content=f"{location_name}에서 {toilet_data['name']}을 사용했습니다. 깨끗하고 시설이 잘 되어있습니다.",
-                    password="1111",
-                    rating=4.5,
-                    image_url=None,
-                    toilet_id=toilet.toilet_id
-                )
-                posts_to_add.append(post)
-        
-        # 모든 게시글 저장
-        for post in posts_to_add:
-            db.add(post)
-        
-        db.commit()
-        print(f"Loaded {len(posts_to_add)} test posts linked to test toilets!")
-    
-    except Exception as e:
-        print(f"Error loading test data: {e}")
-        db.rollback()
-    
-    finally:
-        db.close()
-
-
-def load_sample_posts():
-    """
-    샘플 게시글 로드
-    """
-    db = SessionLocal()
-    
-    try:
-        sample_posts = [
-            Post(
-                category="관광지",
-                title="서울 타워 근처 화장실",
-                content="서울 타워 관광 후 사용했는데 깨끗하고 넓었습니다.",
+        count = 0
+        for index, place in enumerate(SAMPLE_PLACES, start=1):
+            toilet = find_nearest_toilet(db, place["lat"], place["lon"])
+            post = Post(
+                category=place["category"],
+                title=place["title"],
+                content=place["content"],
                 password="1234",
-                rating=4.5,
-                image_url=None
-            ),
-            Post(
-                category="문화시설",
-                title="국립박물관 화장실 리뷰",
-                content="박물관 2층 화장실이 제일 깨끗했어요.",
-                password="5678",
-                rating=5.0,
-                image_url=None
-            ),
-            Post(
-                category="쇼핑",
-                title="강남역 쇼핑몰 화장실",
-                content="항상 깨끗하게 유지되고 있습니다.",
-                password="abcd",
-                rating=4.0,
-                image_url=None
-            ),
-            Post(
-                category="축제/공연",
-                title="서울 뮤직 페스티벌 화장실",
-                content="페스티벌 기간에 임시 화장실이 설치되었는데 관리가 잘되었습니다.",
-                password="xyz",
-                rating=3.5,
-                image_url=None
-            ),
-            Post(
-                category="일반",
-                title="화장실 앱 사용 팁",
-                content="이 앱으로 근처 화장실을 쉽게 찾을 수 있어서 좋습니다!",
-                password="test",
-                rating=5.0,
-                image_url=None
-            ),
-        ]
-        
-        for post in sample_posts:
+                rating=place["rating"],
+                nickname=place["nickname"],
+                post_type="화장실 리뷰",
+                related_place=place["name"],
+                restroom_name=toilet.name if toilet else "",
+                toilet_id=toilet.toilet_id if toilet else None,
+                recommendation_count=12 - index,
+                comment_count=index % 4,
+            )
             db.add(post)
-        
+
+            if toilet:
+                db.add(
+                    Review(
+                        toilet_id=toilet.toilet_id,
+                        rating=place["rating"],
+                        content=place["content"],
+                        created_at=datetime.utcnow(),
+                    )
+                )
+            count += 1
+
         db.commit()
-        print(f"Loaded {len(sample_posts)} sample posts!")
-    
-    except Exception as e:
-        print(f"Error loading sample posts: {e}")
+        return count
+    except Exception:
         db.rollback()
-    
+        raise
     finally:
         db.close()
 
 
 if __name__ == "__main__":
-    # DB 테이블 생성
-    from app.models import Base
-    Base.metadata.create_all(bind=engine)
-    print("Database tables created!")
-    
-    # 공중화장실 데이터 로드
-    # CSV 파일 경로를 지정해야 함
-    csv_path = "c:/Users/SSAFY/Downloads/공중화장실정보_서울특별시.csv"
-    
-    if os.path.exists(csv_path):
-        load_toilet_data(csv_path)
-    else:
-        print(f"CSV file not found at {csv_path}")
-        print("Please download the toilet data first")
-    
-    # 샘플 게시글 로드
-    load_sample_posts()
-    
-    # 테스트용 화장실 및 관광지 게시글 로드
-    print("\n=== Loading test data for tourist attractions ===")
-    load_test_toilets_and_posts()
+    csv_path = resolve_csv_path()
+    print(f"Using toilet CSV: {csv_path}")
+    reset_database()
+    print("Database tables recreated.")
+    toilet_count = load_toilet_data(csv_path)
+    post_count = load_sample_posts()
+    print(f"Loaded {toilet_count} toilets.")
+    print(f"Loaded {post_count} sample posts and reviews.")

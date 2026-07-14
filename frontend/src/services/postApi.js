@@ -91,3 +91,14 @@ export function deletePost(id, password) {
     ? deleteMockPost(id, password)
     : request(`/api/posts/${id}`, { method: 'DELETE', body: JSON.stringify({ password }) })
 }
+
+export function verifyPostPassword(id, password) {
+  if (useMock) return getMockPost(id).then((post) => {
+    if (post.password !== password) throw new Error('비밀번호가 일치하지 않습니다.')
+    return { ok: true }
+  })
+  return request(`/api/posts/${id}/verify-password`, {
+    method: 'POST',
+    body: JSON.stringify({ password }),
+  })
+}

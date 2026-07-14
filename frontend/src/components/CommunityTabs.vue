@@ -19,6 +19,7 @@ const categories = [
   { name: '문화시설', icon: 'museum' },
   { name: '축제·공연', icon: 'ticket' },
   { name: '쇼핑', icon: 'shopping' },
+  { name: '자유게시판', icon: 'chat' },
 ]
 </script>
 
@@ -96,13 +97,23 @@ const categories = [
         </svg>
 
         <svg
-          v-else
+          v-else-if="category.icon === 'shopping'"
           viewBox="0 0 24 24"
           fill="none"
           aria-hidden="true"
         >
           <path d="M5 8h14l-1 12H6L5 8Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
           <path d="M9 9V7a3 3 0 0 1 6 0v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+        </svg>
+
+        <svg
+          v-else
+          viewBox="0 0 24 24"
+          fill="none"
+          aria-hidden="true"
+        >
+          <path d="M5 5h14v11H9l-4 3V5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
+          <path d="M8 9h8M8 12h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
         </svg>
       </span>
 

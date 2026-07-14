@@ -23,7 +23,7 @@ watch(
   <div v-if="open" class="modal-backdrop" @click.self="emit('close')">
     <section class="password-modal" role="dialog" aria-modal="true">
       <h2>{{ title }}</h2>
-      <p>게시글 작성 시 등록한 수정용 비밀번호를 입력하세요.</p>
+      <p>비밀번호를 입력하세요.</p>
       <input v-model="password" type="password" autocomplete="current-password" @keydown.enter="emit('confirm', password)" />
       <p v-if="error" class="form-error">{{ error }}</p>
       <div class="modal-actions">

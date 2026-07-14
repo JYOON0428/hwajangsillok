@@ -13,14 +13,15 @@ const ratingClass = computed(() => {
 })
 
 const timeLabel = computed(() => {
-  const diff = Date.now() - new Date(props.post.createdAt).getTime()
-  const minutes = Math.max(1, Math.floor(diff / 60000))
+  const createdAt = new Date(props.post.createdAt)
+  if (Number.isNaN(createdAt.getTime())) return props.post.createdAtLabel || ''
+  const diff = Date.now() - createdAt.getTime()
+  const minutes = Math.max(0, Math.floor(diff / 60000))
+  if (minutes < 1) return '방금 전'
   if (minutes < 60) return `${minutes}분 전`
   const hours = Math.floor(minutes / 60)
   if (hours < 24) return `${hours}시간 전`
-  return new Intl.DateTimeFormat('ko-KR', { month: '2-digit', day: '2-digit' }).format(
-    new Date(props.post.createdAt),
-  )
+  return new Intl.DateTimeFormat('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(createdAt)
 })
 </script>
 
@@ -44,10 +45,9 @@ const timeLabel = computed(() => {
       <div class="post-card-footer">
         <div class="post-rating" :class="ratingClass">
           <template v-if="post.rating != null">★ {{ post.rating.toFixed(1) }}</template>
-          <template v-else>댓글 {{ post.commentCount }}개</template>
+          <template v-else>자유글</template>
         </div>
         <div class="post-meta">
-          <span>댓글 {{ post.commentCount }}</span>
           <span>{{ timeLabel }}</span>
         </div>
       </div>

@@ -1,93 +1,292 @@
-# 2팀-손정인-김진영-이정윤
+# 화장실록
 
+서울 공공데이터 기반 화장실 검색 및 익명 커뮤니티 서비스입니다.
 
+사용자는 카카오맵에서 주변 화장실을 확인하고, 화장실 이용 후기를 익명으로 작성할 수 있습니다. 홈 화면의 주변 화장실 기준 위치는 현재 GPS 대신 `역삼역 멀티캠퍼스`로 고정되어 있습니다.
 
-## Getting started
+## 기술 스택
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+- Frontend: Vue 3, Vite, Vue Router
+- Backend: FastAPI, SQLAlchemy
+- Database: SQLite
+- Map/Geocoding: Kakao Maps JavaScript API, Kakao Local REST API
+- Data: 서울특별시 공중화장실 공공데이터 CSV
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+## 프로젝트 구조
 
-## Add your files
-
-* [Create](https://docs.gitlab.com/user/project/repository/web_editor/#create-a-file) or [upload](https://docs.gitlab.com/user/project/repository/web_editor/#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
-
+```text
+2/
+├─ backend/
+│  ├─ app/
+│  │  ├─ models/
+│  │  ├─ routes/
+│  │  └─ database.py
+│  ├─ data/
+│  │  ├─ toilet/공중화장실정보_서울특별시.csv
+│  │  └─ seoul/*.json
+│  ├─ load_data.py
+│  ├─ main.py
+│  ├─ requirements.txt
+│  └─ .env.example
+├─ frontend/
+│  ├─ src/
+│  ├─ package.json
+│  └─ .env.example
+└─ README.md
 ```
-cd existing_repo
-git remote add origin https://lab.ssafy.com/s16/a20/260714-startcamp-pjt/2.git
-git branch -M master
-git push -uf origin master
+
+## 사전 준비
+
+로컬 PC에 아래 프로그램이 설치되어 있어야 합니다.
+
+- Python 3.11 이상
+- Node.js 20 이상 권장
+- Git
+- VSCode
+
+Windows PowerShell 기준 명령어를 기본으로 적었습니다. macOS/Linux는 `python` 대신 `python3`을 쓰면 됩니다.
+
+## 1. 프로젝트 클론
+
+```powershell
+git clone <REPOSITORY_URL>
+cd 2
 ```
 
-## Integrate with your tools
+이미 압축 파일로 받은 경우에는 압축을 풀고 `2` 폴더를 VSCode로 열면 됩니다.
 
-* [Set up project integrations](https://lab.ssafy.com/s16/a20/260714-startcamp-pjt/2/-/settings/integrations)
+## 2. 카카오 API 키 준비
 
-## Collaborate with your team
+이 프로젝트는 지도 표시와 주소 좌표 변환에 카카오 API를 사용합니다.
 
-* [Invite team members and collaborators](https://docs.gitlab.com/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/user/project/merge_requests/creating_merge_requests/)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/user/project/issues/managing_issues/#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+1. [Kakao Developers](https://developers.kakao.com/)에 로그인합니다.
+2. 내 애플리케이션에서 앱을 생성합니다.
+3. 제품 설정에서 `카카오맵` 또는 `카카오맵/로컬` 사용 설정을 켭니다.
+4. 플랫폼 설정에서 Web 플랫폼을 등록합니다.
+5. 사이트 도메인에 아래 주소를 등록합니다.
 
-## Test and Deploy
+```text
+http://localhost:5173
+```
 
-Use the built-in continuous integration in GitLab.
+6. 앱 키 화면에서 아래 두 키를 확인합니다.
 
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/topics/autodevops/requirements/)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ci/environments/protected_environments/)
+- JavaScript 키: 프론트엔드 지도 표시용
+- REST API 키: 백엔드 주소 지오코딩용
 
-***
+API 호출이 `403`으로 실패하면서 `disabled OPEN_MAP_AND_LOCAL service`가 보이면 카카오맵/로컬 사용 설정이 꺼진 상태입니다.
 
-# Editing this README
+## 3. 환경변수 파일 만들기
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+`.env` 파일은 Git에 올리지 않습니다. 각자 로컬에서 예시 파일을 복사해서 만듭니다.
 
-## Suggestions for a good README
+### Backend
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+```powershell
+cd backend
+copy .env.example .env
+```
 
-## Name
-Choose a self-explaining name for your project.
+`backend/.env`를 열고 REST API 키를 넣습니다.
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+```env
+KAKAO_REST_API_KEY=여기에_카카오_REST_API_키
+KAKAO_GEOCODE_DELAY=0.03
+```
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+### Frontend
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+```powershell
+cd ../frontend
+copy .env.example .env
+```
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+`frontend/.env`를 열고 JavaScript 키를 넣습니다.
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+```env
+VITE_API_BASE_URL=http://localhost:8000
+VITE_USE_MOCK_API=false
+VITE_KAKAO_MAP_APP_KEY=여기에_카카오_JavaScript_키
+```
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+## 4. 백엔드 설치 및 DB 생성
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+VSCode 터미널에서 실행합니다.
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+```powershell
+cd backend
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+python load_data.py
+```
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+`python load_data.py`는 다음 작업을 합니다.
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+- `backend/app.db` SQLite 파일 생성
+- 서울 공중화장실 CSV 데이터 적재
+- 카카오 Local API로 주소를 위도/경도로 변환
+- 샘플 게시글과 리뷰 생성
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+처음 실행할 때는 데이터가 많아서 몇 분 걸릴 수 있습니다.
 
-## License
-For open source projects, say how it is licensed.
+정상 실행 예시는 다음과 비슷합니다.
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+```text
+Database tables recreated.
+Loaded 500 toilets...
+...
+Geocoded by Kakao: 5424, fallback: 193
+Loaded 5617 toilets.
+Loaded 6 sample posts and reviews.
+```
+
+`app.db`, `data/geocode_cache.json`은 로컬 생성 파일이라 Git에 올리지 않습니다.
+
+## 5. 백엔드 실행
+
+백엔드 터미널에서 실행합니다.
+
+```powershell
+cd backend
+.\.venv\Scripts\Activate.ps1
+uvicorn main:app --host 127.0.0.1 --port 8000 --reload
+```
+
+정상 확인:
+
+- API 상태: http://127.0.0.1:8000/health
+- Swagger 문서: http://127.0.0.1:8000/docs
+
+## 6. 프론트엔드 설치 및 실행
+
+새 VSCode 터미널을 열고 실행합니다.
+
+```powershell
+cd frontend
+npm install
+npm run dev -- --host 127.0.0.1 --port 5173
+```
+
+브라우저에서 아래 주소를 엽니다.
+
+```text
+http://localhost:5173
+```
+
+카카오 Web 플랫폼 도메인을 `http://localhost:5173`으로 등록했으므로, 브라우저도 가능하면 `localhost` 주소로 접속하세요. `127.0.0.1`은 카카오에서 다른 도메인으로 취급할 수 있습니다.
+
+## 빠른 실행 요약
+
+터미널 1, 백엔드:
+
+```powershell
+cd backend
+.\.venv\Scripts\Activate.ps1
+uvicorn main:app --host 127.0.0.1 --port 8000 --reload
+```
+
+터미널 2, 프론트엔드:
+
+```powershell
+cd frontend
+npm run dev -- --host 127.0.0.1 --port 5173
+```
+
+접속:
+
+```text
+http://localhost:5173
+```
+
+## 주요 기능
+
+- 서울 공중화장실 공공데이터 검색
+- 카카오맵 기반 화장실 위치 표시
+- 역삼역 멀티캠퍼스 기준 주변 화장실 표시
+- 화장실 상세 정보, 편의시설, 운영 상태 표시
+- 화장실 후기 작성
+- 자유게시판 글 작성
+- 익명 사용자 자동 표시
+- 게시글 비밀번호 기반 수정/삭제
+- 24시간 이내 상대 시간 표시, 이후 날짜 표시
+
+## 테스트
+
+백엔드 자동 테스트:
+
+```powershell
+cd backend
+.\.venv\Scripts\Activate.ps1
+python -m pytest tests
+```
+
+프론트엔드 빌드:
+
+```powershell
+cd frontend
+npm run build
+```
+
+참고로 `backend/test_api_manual.py`는 별도 수동 API 테스트 파일입니다. `requests` 패키지가 없으면 전체 `pytest` 수집 단계에서 실패할 수 있으므로, 자동 테스트는 `python -m pytest tests`로 실행하세요.
+
+## 자주 발생하는 문제
+
+### 프론트에서 API 데이터를 못 가져오는 경우
+
+`frontend/.env`를 확인합니다.
+
+```env
+VITE_API_BASE_URL=http://localhost:8000
+VITE_USE_MOCK_API=false
+```
+
+수정 후에는 프론트 dev 서버를 재시작해야 합니다.
+
+### 지도가 안 뜨는 경우
+
+아래를 확인합니다.
+
+- `frontend/.env`의 `VITE_KAKAO_MAP_APP_KEY`
+- Kakao Developers의 Web 플랫폼 도메인: `http://localhost:5173`
+- 카카오맵/로컬 사용 설정
+- 브라우저 접속 주소가 `http://localhost:5173`인지 여부
+
+### 지오코딩이 전부 fallback으로 나오는 경우
+
+아래를 확인합니다.
+
+- `backend/.env`의 `KAKAO_REST_API_KEY`
+- 카카오맵/로컬 사용 설정
+- REST API 키가 JavaScript 키와 바뀌지 않았는지 여부
+
+설정을 고친 뒤에는 실패 캐시를 삭제하고 다시 로드합니다.
+
+```powershell
+cd backend
+Remove-Item .\data\geocode_cache.json -ErrorAction SilentlyContinue
+python load_data.py
+```
+
+### 포트가 이미 사용 중인 경우
+
+다른 터미널에서 기존 서버가 켜져 있을 수 있습니다.
+
+- 백엔드 기본 포트: `8000`
+- 프론트 기본 포트: `5173`
+
+기존 프로세스를 종료하거나 다른 포트로 실행하세요.
+
+## Git에 올리지 말아야 할 파일
+
+아래 파일은 개인 로컬 파일이므로 커밋하지 않습니다.
+
+- `backend/.env`
+- `frontend/.env`
+- `backend/app.db`
+- `backend/data/geocode_cache.json`
+- `backend/uploads/`
+- `frontend/node_modules/`
+- 로그 파일
+
+이미 `.gitignore`에 포함되어 있습니다.

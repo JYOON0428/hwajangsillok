@@ -39,9 +39,5 @@ function ratingClass(rating) {
       />
       <span v-if="review.imageUrls.length > 3" class="more-images">+{{ review.imageUrls.length - 3 }}</span>
     </div>
-
-    <footer>
-      <button type="button">댓글 {{ review.commentCount }}</button>
-    </footer>
   </article>
 </template>

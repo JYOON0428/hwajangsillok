@@ -17,6 +17,15 @@ class ToiletBase(BaseModel):
     emergency_bell: bool = False
     diaper_changing_table: bool = False
     phone: Optional[str] = None
+    opening_hours: Optional[str] = None
+    open_time_detail: Optional[str] = None
+    data_reference_date: Optional[str] = None
+    entrance_cctv: bool = False
+    toilet_type: Optional[str] = None
+    managing_agency: Optional[str] = None
+    geocoded_address: Optional[str] = None
+    geocode_source: Optional[str] = None
+    geocode_status: Optional[str] = None
 
 
 class ToiletCreate(ToiletBase):
@@ -49,6 +58,13 @@ class PostBase(BaseModel):
     password: str
     rating: float = 0
     image_url: Optional[str] = None
+    image_urls: Optional[str] = None
+    nickname: Optional[str] = None
+    post_type: str = "화장실 리뷰"
+    related_place: Optional[str] = None
+    restroom_name: Optional[str] = None
+    recommendation_count: int = 0
+    comment_count: int = 0
     toilet_id: Optional[int] = None
 
 
@@ -62,6 +78,12 @@ class PostUpdate(BaseModel):
     password: str
     rating: Optional[float] = None
     image_url: Optional[str] = None
+    image_urls: Optional[str] = None
+    nickname: Optional[str] = None
+    post_type: Optional[str] = None
+    related_place: Optional[str] = None
+    restroom_name: Optional[str] = None
+    toilet_id: Optional[int] = None
 
 
 class PostPasswordVerify(BaseModel):
@@ -75,6 +97,13 @@ class PostResponse(BaseModel):
     content: str
     rating: float
     image_url: Optional[str]
+    image_urls: Optional[str]
+    nickname: Optional[str]
+    post_type: Optional[str]
+    related_place: Optional[str]
+    restroom_name: Optional[str]
+    recommendation_count: int
+    comment_count: int
     toilet_id: Optional[int]
     created_at: datetime
     updated_at: datetime
