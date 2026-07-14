@@ -1,0 +1,20 @@
+# Python 가상환경
+venv/
+.venv/
+backend/venv/
+backend/.venv/
+
+# Python 캐시
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# 환경변수
+.env
+
+# SQLite
+*.db
+
+# Frontend
+node_modules/
+dist/

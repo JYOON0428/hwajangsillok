@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>화장실 커뮤니티 - API 테스트</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            border: none;
+            background: white;
+            color: #667eea;
+            cursor: pointer;
+            border-radius: 25px;
+            font-weight: bold;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .tab-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .tab-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .content {
+            display: none;
+        }
+
+        .content.active {
+            display: block;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            transition: transform 0.3s;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .toilet-list, .post-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .toilet-card, .post-card {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .toilet-card h3, .post-card h3 {
+            color: #333;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .distance-badge {
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .rating-badge {
+            background: #ff9800;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .toilet-info {
+            font-size: 14px;
+            color: #555;
+            line-height: 1.8;
+        }
+
+        .facility-list {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .facility-tag {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+
+        .post-content {
+            font-size: 14px;
+            color: #555;
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+
+        .post-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 12px;
+            color: #999;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px 20px;
+            color: #667eea;
+        }
+
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #c62828;
+        }
+
+        .success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2e7d32;
+        }
+
+        .location-presets {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .location-btn {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .location-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .category-filter {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .category-btn {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .category-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .category-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .toilet-list, .post-list {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .tabs {
+                flex-direction: column;
+            }
+
+            .tab-btn {
+                width: 100%;
+            }
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .api-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            animation: pulse 1s infinite;
+        }
+
+        .status-indicator.online {
+            background: #4caf50;
+        }
+
+        .status-indicator.offline {
+            background: #f44336;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+    <div class="api-status">
+        <div class="status-indicator" id="statusIndicator"></div>
+        <span id="statusText">연결 확인 중...</span>
+    </div>
+
+    <div class="container">
+        <h1>🚽 화장실 커뮤니티 API 테스트</h1>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab(0)">📍 근처 화장실</button>
+            <button class="tab-btn" onclick="switchTab(1)">📝 게시글 작성</button>
+            <button class="tab-btn" onclick="switchTab(2)">📋 커뮤니티</button>
+        </div>
+
+        <!-- 탭 1: 근처 화장실 -->
+        <div class="content active">
+            <div class="card">
+                <h2>📍 근처 화장실 찾기</h2>
+                <p style="color: #666; margin-bottom: 20px;">서울의 유명 관광지 주변 화장실을 검색하세요</p>
+
+                <div class="location-presets">
+                    <button class="location-btn" onclick="searchNearby(37.5514, 126.9882)">🗼 남산타워</button>
+                    <button class="location-btn" onclick="searchNearby(37.4979, 127.0276)">🌆 강남역</button>
+                    <button class="location-btn" onclick="searchNearby(37.5731, 126.9752)">🏛️ 국립박물관</button>
+                    <button class="location-btn" onclick="searchNearby(37.5665, 126.9780)">🏯 경복궁</button>
+                </div>
+
+                <div class="form-group">
+                    <label>위도 (Latitude)</label>
+                    <input type="number" id="latitude" placeholder="37.5" step="0.0001">
+                </div>
+
+                <div class="form-group">
+                    <label>경도 (Longitude)</label>
+                    <input type="number" id="longitude" placeholder="127.0" step="0.0001">
+                </div>
+
+                <div class="form-group">
+                    <label>검색 범위 (미터)</label>
+                    <input type="number" id="distance" value="1000" min="100" max="10000" step="100">
+                </div>
+
+                <button onclick="searchNearbyCustom()" style="width: 100%; padding: 15px;">🔍 검색하기</button>
+
+                <div id="toiletResult" style="margin-top: 30px;"></div>
+            </div>
+        </div>
+
+        <!-- 탭 2: 게시글 작성 -->
+        <div class="content">
+            <div class="card">
+                <h2>📝 커뮤니티 글쓰기</h2>
+
+                <div class="form-group">
+                    <label>카테고리</label>
+                    <select id="postCategory">
+                        <option value="관광지">관광지</option>
+                        <option value="문화시설">문화시설</option>
+                        <option value="축제/공연">축제/공연</option>
+                        <option value="쇼핑">쇼핑</option>
+                        <option value="일반">일반 게시판</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>제목</label>
+                    <input type="text" id="postTitle" placeholder="화장실 리뷰 제목을 입력하세요">
+                </div>
+
+                <div class="form-group">
+                    <label>내용</label>
+                    <textarea id="postContent" placeholder="화장실에 대한 솔직한 리뷰를 작성하세요..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>평점 (0~5)</label>
+                    <input type="number" id="postRating" min="0" max="5" step="0.5" value="4">
+                </div>
+
+                <div class="form-group">
+                    <label>이미지 URL (선택)</label>
+                    <input type="url" id="postImage" placeholder="https://example.com/image.jpg">
+                </div>
+
+                <div class="form-group">
+                    <label>비밀번호 (수정/삭제 시 필요)</label>
+                    <input type="password" id="postPassword" placeholder="비밀번호를 입력하세요">
+                </div>
+
+                <button onclick="submitPost()" style="width: 100%; padding: 15px;">✍️ 글 올리기</button>
+
+                <div id="postResult" style="margin-top: 30px;"></div>
+            </div>
+        </div>
+
+        <!-- 탭 3: 커뮤니티 -->
+        <div class="content">
+            <div class="card">
+                <h2>📋 커뮤니티 게시판</h2>
+
+                <div class="category-filter">
+                    <button class="category-btn active" onclick="searchPosts('관광지')">관광지</button>
+                    <button class="category-btn" onclick="searchPosts('문화시설')">문화시설</button>
+                    <button class="category-btn" onclick="searchPosts('축제/공연')">축제/공연</button>
+                    <button class="category-btn" onclick="searchPosts('쇼핑')">쇼핑</button>
+                    <button class="category-btn" onclick="searchPosts('일반')">일반 게시판</button>
+                </div>
+
+                <div id="postsResult" style="margin-top: 20px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8001/api/v1';
+
+        // 시간 포맷팅 함수
+        function formatTime(dateString) {
+            const createdDate = new Date(dateString);
+            const now = new Date();
+            
+            const diffMs = now - createdDate;
+            const diffMins = Math.floor(diffMs / (1000 * 60));
+            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+            
+            // 같은 날짜 확인
+            const isSameDay = createdDate.toDateString() === now.toDateString();
+            
+            if (isSameDay) {
+                if (diffMins < 60) {
+                    return diffMins === 0 ? '방금 전' : `${diffMins}분 전`;
+                } else {
+                    return `${diffHours}시간 전`;
+                }
+            } else if (diffDays === 1) {
+                return '어제';
+            } else {
+                return createdDate.toLocaleDateString('ko-KR', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                });
+            }
+        }
+
+        // 페이지 로드 시 API 상태 확인
+        window.addEventListener('load', () => {
+            checkAPIStatus();
+            // 초기 로드: 관광지 게시글
+            searchPosts('관광지');
+        });
+
+        // API 상태 확인
+        async function checkAPIStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/posts/categories`);
+                if (response.ok) {
+                    document.getElementById('statusIndicator').className = 'status-indicator online';
+                    document.getElementById('statusText').textContent = 'API 온라인 ✓';
+                } else {
+                    setOffline();
+                }
+            } catch (error) {
+                setOffline();
+            }
+        }
+
+        function setOffline() {
+            document.getElementById('statusIndicator').className = 'status-indicator offline';
+            document.getElementById('statusText').textContent = 'API 오프라인';
+        }
+
+        // 탭 전환
+        function switchTab(index) {
+            document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            
+            document.querySelectorAll('.content')[index].classList.add('active');
+            document.querySelectorAll('.tab-btn')[index].classList.add('active');
+        }
+
+        // 1️⃣ 근처 화장실 검색
+        function searchNearby(lat, lon) {
+            document.getElementById('latitude').value = lat;
+            document.getElementById('longitude').value = lon;
+            searchNearbyCustom();
+        }
+
+        async function searchNearbyCustom() {
+            const latitude = parseFloat(document.getElementById('latitude').value);
+            const longitude = parseFloat(document.getElementById('longitude').value);
+            const distance = parseInt(document.getElementById('distance').value);
+
+            if (!latitude || !longitude) {
+                showError('toiletResult', '위도와 경도를 입력하세요');
+                return;
+            }
+
+            showLoading('toiletResult');
+
+            try {
+                const response = await fetch(
+                    `${API_BASE}/restrooms/nearby?latitude=${latitude}&longitude=${longitude}&distance=${distance}&limit=10`
+                );
+
+                if (!response.ok) throw new Error('API 요청 실패');
+
+                const toilets = await response.json();
+
+                if (toilets.length === 0) {
+                    showError('toiletResult', '근처 화장실이 없습니다');
+                    return;
+                }
+
+                let html = `<div style="margin-bottom: 15px;"><strong>찾은 화장실: ${toilets.length}개</strong></div>`;
+                html += '<div class="toilet-list">';
+
+                toilets.forEach(toilet => {
+                    html += `
+                        <div class="toilet-card">
+                            <h3>
+                                ${toilet.name}
+                                <span class="distance-badge">${toilet.distance.toFixed(0)}m</span>
+                            </h3>
+                            <div class="toilet-info">
+                                <p><strong>주소:</strong> ${toilet.address}</p>
+                                <p><strong>위치:</strong> ${toilet.latitude.toFixed(4)}, ${toilet.longitude.toFixed(4)}</p>
+                                <p><strong>평점:</strong> 
+                                    ${toilet.average_rating ? `<span class="rating-badge">⭐ ${toilet.average_rating.toFixed(1)}</span>` : '평가 없음'}
+                                </p>
+                            </div>
+                            <div class="facility-list">
+                                ${toilet.male_toilet_count > 0 ? `<span class="facility-tag">👨 남성 ${toilet.male_toilet_count}</span>` : ''}
+                                ${toilet.female_toilet_count > 0 ? `<span class="facility-tag">👩 여성 ${toilet.female_toilet_count}</span>` : ''}
+                                ${toilet.handicap_facility ? `<span class="facility-tag">♿ 장애인시설</span>` : ''}
+                                ${toilet.emergency_bell ? `<span class="facility-tag">🔔 비상벨</span>` : ''}
+                                ${toilet.diaper_changing_table ? `<span class="facility-tag">👶 기저귀교환대</span>` : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += '</div>';
+                document.getElementById('toiletResult').innerHTML = html;
+                showSuccess('toiletResult', `✓ ${toilets.length}개 화장실을 찾았습니다 (거리순 정렬)`);
+
+            } catch (error) {
+                console.error('오류:', error);
+                showError('toiletResult', '근처 화장실 검색 중 오류가 발생했습니다: ' + error.message);
+            }
+        }
+
+        // 2️⃣ 게시글 작성
+        async function submitPost() {
+            const category = document.getElementById('postCategory').value;
+            const title = document.getElementById('postTitle').value;
+            const content = document.getElementById('postContent').value;
+            const rating = parseFloat(document.getElementById('postRating').value);
+            const image_url = document.getElementById('postImage').value || null;
+            const password = document.getElementById('postPassword').value;
+
+            if (!title || !content || !password) {
+                showError('postResult', '제목, 내용, 비밀번호는 필수입니다');
+                return;
+            }
+
+            showLoading('postResult');
+
+            try {
+                const response = await fetch(`${API_BASE}/posts`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        category,
+                        title,
+                        content,
+                        password,
+                        rating,
+                        image_url
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || '글 작성 실패');
+                }
+
+                const post = await response.json();
+
+                // 폼 초기화
+                document.getElementById('postTitle').value = '';
+                document.getElementById('postContent').value = '';
+                document.getElementById('postRating').value = '4';
+                document.getElementById('postImage').value = '';
+                document.getElementById('postPassword').value = '';
+
+                showSuccess('postResult', `✓ 글이 성공적으로 작성되었습니다! (ID: ${post.post_id})`);
+                
+                // 해당 카테고리로 자동 이동
+                setTimeout(() => {
+                    switchTab(2);
+                    searchPosts(category);
+                }, 1500);
+
+            } catch (error) {
+                console.error('오류:', error);
+                showError('postResult', '글 작성 중 오류가 발생했습니다: ' + error.message);
+            }
+        }
+
+        // 3️⃣ 커뮤니티 게시글 조회
+        async function searchPosts(category) {
+            // 버튼 활성화 상태 업데이트
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent.trim() === category) {
+                    btn.classList.add('active');
+                }
+            });
+
+            showLoading('postsResult');
+
+            try {
+                const response = await fetch(
+                    `${API_BASE}/posts?category=${encodeURIComponent(category)}&sort_by=recent&limit=20`
+                );
+
+                if (!response.ok) throw new Error('API 요청 실패');
+
+                const posts = await response.json();
+
+                if (posts.length === 0) {
+                    document.getElementById('postsResult').innerHTML = `
+                        <div style="text-align: center; padding: 40px; color: #999;">
+                            <p>아직 게시글이 없습니다</p>
+                            <p>첫 번째 게시글을 작성해보세요! ✍️</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = `<div style="margin-bottom: 15px;"><strong>총 ${posts.length}개 게시글</strong></div>`;
+                html += '<div class="post-list">';
+
+                posts.forEach(post => {
+                    const timeString = formatTime(post.created_at);
+
+                    html += `
+                        <div class="post-card">
+                            <h3>
+                                ${post.title}
+                                <span class="rating-badge">⭐ ${post.rating.toFixed(1)}</span>
+                            </h3>
+                            <div class="post-content">
+                                ${post.content.substring(0, 100)}${post.content.length > 100 ? '...' : ''}
+                            </div>
+                            ${post.image_url ? `<img src="${post.image_url}" style="width: 100%; border-radius: 8px; margin: 10px 0;" onerror="this.style.display='none'">` : ''}
+                            <div class="post-meta">
+                                <span>📅 ${timeString}</span>
+                                <span>🏷️ ${post.category}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                html += '</div>';
+                document.getElementById('postsResult').innerHTML = html;
+
+            } catch (error) {
+                console.error('오류:', error);
+                showError('postsResult', '게시글 조회 중 오류가 발생했습니다: ' + error.message);
+            }
+        }
+
+        // 유틸리티 함수
+        function showLoading(elementId) {
+            document.getElementById(elementId).innerHTML = '<div class="spinner"></div>';
+        }
+
+        function showError(elementId, message) {
+            document.getElementById(elementId).innerHTML = `<div class="error">❌ ${message}</div>`;
+        }
+
+        function showSuccess(elementId, message) {
+            const current = document.getElementById(elementId).innerHTML;
+            document.getElementById(elementId).innerHTML = `<div class="success">${message}</div>${current}`;
+        }
+
+        // 실시간 API 상태 모니터링
+        setInterval(checkAPIStatus, 5000);
+    </script>
+</body>
+</html>
