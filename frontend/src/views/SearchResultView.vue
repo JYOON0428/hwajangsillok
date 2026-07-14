@@ -8,6 +8,12 @@ import { getRestroomReviews, searchRestrooms } from '../services/locationApi'
 
 const route = useRoute()
 const router = useRouter()
+const FIXED_NEARBY_LOCATION = {
+  label: '역삼역 멀티캠퍼스',
+  keyword: '역삼역 멀티캠퍼스',
+  latitude: 37.5012743,
+  longitude: 127.039585,
+}
 
 const keyword = ref(String(route.query.q || '화장실'))
 const sort = ref('distance')
@@ -41,6 +47,29 @@ const activeFilterCount = computed(
 )
 
 const resultPlaceName = computed(() => normalizePlaceKeyword(route.query.q || keyword.value))
+const selectedOnlyMapMode = computed(() => route.query.source === 'nearby-card' && Boolean(selectedRestroom.value))
+const mapRestrooms = computed(() => (
+  selectedOnlyMapMode.value && selectedRestroom.value ? [selectedRestroom.value] : restrooms.value
+))
+const searchAnchorLocation = computed(() => {
+  const center = restrooms.value[0]?.searchCenter
+  if (center?.latitude && center?.longitude) {
+    return {
+      label: selectedOnlyMapMode.value ? '나의 위치' : resultPlaceName.value || center.label || '검색 위치',
+      latitude: Number(center.latitude),
+      longitude: Number(center.longitude),
+    }
+  }
+
+  const rawKeyword = String(route.query.q || keyword.value || '')
+  if (rawKeyword.includes('역삼역') || rawKeyword.includes('멀티캠퍼스')) {
+    return {
+      ...FIXED_NEARBY_LOCATION,
+      label: selectedOnlyMapMode.value ? '나의 위치' : FIXED_NEARBY_LOCATION.label,
+    }
+  }
+  return null
+})
 
 function normalizePlaceKeyword(rawKeyword) {
   const original = String(rawKeyword || '').trim()
@@ -96,7 +125,7 @@ async function loadRestrooms({ preserveSelection = true } = {}) {
   error.value = ''
 
   try {
-    const queryRestroomId = Number(route.query.restroomId) || null
+    const queryRestroomId = Number(route.query.restroomId || route.query.selected) || null
     const preferredId = preserveSelection ? selectedId.value : queryRestroomId
     const items = await searchRestrooms({
       keyword: keyword.value,
@@ -246,9 +275,10 @@ function openSelectedDetailOnMobile() {
 }
 
 watch(
-  () => route.query.q,
+  () => [route.query.q, route.query.radius, route.query.restroomId, route.query.selected, route.query.source],
   () => {
     keyword.value = String(route.query.q || '화장실')
+    radius.value = Number(route.query.radius || radius.value || 1000)
     loadRestrooms({ preserveSelection: false })
   },
 )
@@ -276,8 +306,14 @@ onMounted(() => loadRestrooms({ preserveSelection: false }))
       <button :class="{ active: mobileMode === 'map' }" type="button" @click="mobileMode = 'map'">지도</button>
     </div>
 
-    <div class="map-search-workspace" :class="`mobile-${mobileMode}`">
-      <aside class="restroom-list-pane">
+    <div
+      class="map-search-workspace"
+      :class="[
+        `mobile-${mobileMode}`,
+        { 'map-search-workspace--focused': selectedOnlyMapMode },
+      ]"
+    >
+      <aside v-if="!selectedOnlyMapMode" class="restroom-list-pane">
         <header class="result-control-panel">
           <div class="result-count-row">
             <div class="result-title-block">
@@ -355,8 +391,11 @@ onMounted(() => loadRestrooms({ preserveSelection: false }))
 
       <div class="restroom-map-pane">
         <RestroomMapPanel
-          :restrooms="restrooms"
+          :restrooms="mapRestrooms"
           :selected-id="selectedId"
+          :anchor-location="searchAnchorLocation"
+          :selected-only="selectedOnlyMapMode"
+          :show-research-button="!selectedOnlyMapMode"
           @select="selectRestroom"
           @search-current-map="searchCurrentMap"
           @open-detail="openSelectedDetailOnMobile"

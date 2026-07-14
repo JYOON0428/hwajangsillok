@@ -119,7 +119,6 @@ function operationStatus(restroom) {
             <option value="recent">최신순</option>
             <option value="cleanlinessHigh">청결도 높은 순</option>
             <option value="cleanlinessLow">청결도 낮은 순</option>
-            <option value="comments">댓글 많은 순</option>
           </select>
         </div>
 

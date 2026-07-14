@@ -18,20 +18,20 @@ const ratingClass = computed(() => {
 
 const timeLabel = computed(() => {
   const createdAt = new Date(props.post.createdAt)
+  if (Number.isNaN(createdAt.getTime())) return props.post.createdAtLabel || ''
   const diff = Date.now() - createdAt.getTime()
-  const minutes = Math.max(1, Math.floor(diff / 60000))
+  const minutes = Math.max(0, Math.floor(diff / 60000))
 
+  if (minutes < 1) return '방금 전'
   if (minutes < 60) return `${minutes}분 전`
 
   const hours = Math.floor(minutes / 60)
   if (hours < 24) return `${hours}시간 전`
 
-  const days = Math.floor(hours / 24)
-  if (days < 7) return `${days}일 전`
-
   return new Intl.DateTimeFormat('ko-KR', {
-    month: 'long',
-    day: 'numeric',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
   }).format(createdAt)
 })
 
@@ -115,16 +115,6 @@ const images = computed(() => {
       />
 
       <footer class="reddit-feed-card__actions">
-        <RouterLink
-          class="reddit-action-button"
-          :to="{ name: 'post-detail', params: { id: post.id } }"
-        >
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M5 5h14v11H9l-4 3V5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
-          </svg>
-          댓글 {{ post.commentCount || 0 }}
-        </RouterLink>
-
         <button class="reddit-action-button" type="button" @click="emit('share', post)">
           <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
             <circle cx="18" cy="5" r="2.2" stroke="currentColor" stroke-width="1.8" />

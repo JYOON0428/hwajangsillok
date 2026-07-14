@@ -1,8 +1,15 @@
 <script setup>
 import { onMounted, ref, watch } from 'vue'
 import { searchRestrooms } from '../services/locationApi'
-import RestroomMapMock from './RestroomMapMock.vue'
+import RestroomMapPanel from './RestroomMapPanel.vue'
 import NearbyRestroomCard from './NearbyRestroomCard.vue'
+
+const FIXED_NEARBY_LOCATION = {
+  label: '역삼역 멀티캠퍼스',
+  keyword: '역삼역 멀티캠퍼스',
+  latitude: 37.5012743,
+  longitude: 127.039585,
+}
 
 const radius = ref(500)
 const restrooms = ref([])
@@ -19,7 +26,10 @@ async function load() {
   error.value = ''
 
   try {
-    const nextRestrooms = await searchRestrooms({ radius: radius.value })
+    const nextRestrooms = await searchRestrooms({
+      keyword: FIXED_NEARBY_LOCATION.keyword,
+      radius: radius.value,
+    })
 
     // 사용자가 반경 버튼을 연속으로 눌렀을 때 가장 마지막 요청만 반영한다.
     if (currentRequest !== requestSequence) return
@@ -60,7 +70,7 @@ onMounted(load)
           <RouterLink
             v-if="restrooms.length"
             class="nearby-map-link"
-            :to="{ name: 'search', query: { radius } }"
+            :to="{ name: 'search', query: { q: FIXED_NEARBY_LOCATION.keyword, radius, source: 'nearby' } }"
           >
             지도에서 {{ restrooms.length }}곳 보기
             <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
@@ -104,13 +114,20 @@ onMounted(load)
           :aria-busy="loading"
           aria-live="polite"
         >
-          <RestroomMapMock :restrooms="restrooms" />
+          <RestroomMapPanel
+            class="nearby-kakao-map"
+            :restrooms="restrooms"
+            :anchor-location="FIXED_NEARBY_LOCATION"
+            :show-research-button="false"
+          />
 
           <div class="nearby-list">
             <NearbyRestroomCard
               v-for="restroom in restrooms.slice(0, 3)"
               :key="restroom.id"
               :restroom="restroom"
+              :radius="radius"
+              :origin-keyword="FIXED_NEARBY_LOCATION.keyword"
             />
 
             <p v-if="!restrooms.length && !error" class="state-message">

@@ -3,6 +3,8 @@ import { computed } from 'vue'
 
 const props = defineProps({
   restroom: { type: Object, required: true },
+  radius: { type: Number, default: 500 },
+  originKeyword: { type: String, default: '역삼역 멀티캠퍼스' },
 })
 
 const ratingClass = computed(() => {
@@ -16,7 +18,15 @@ const ratingClass = computed(() => {
 <template>
   <RouterLink
     class="nearby-restroom-card"
-    :to="{ name: 'search', query: { q: restroom.name, selected: restroom.id } }"
+    :to="{
+      name: 'search',
+      query: {
+        q: originKeyword,
+        radius,
+        source: 'nearby-card',
+        restroomId: restroom.id,
+      },
+    }"
   >
     <div class="nearby-card-top">
       <div>

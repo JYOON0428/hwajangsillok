@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { deletePost, getPost } from '../services/postApi'
+import { deletePost, getPost, verifyPostPassword } from '../services/postApi'
 import ImageCarousel from '../components/ImageCarousel.vue'
 import PasswordModal from '../components/PasswordModal.vue'
 import PostVoteControl from '../components/PostVoteControl.vue'
@@ -14,6 +14,9 @@ const error = ref('')
 const deleteModalOpen = ref(false)
 const deleteBusy = ref(false)
 const deleteError = ref('')
+const editModalOpen = ref(false)
+const editBusy = ref(false)
+const editError = ref('')
 const notice = ref('')
 let noticeTimer = null
 
@@ -35,13 +38,19 @@ const ratingClass = computed(() => {
 
 const createdAtLabel = computed(() => {
   if (!post.value?.createdAt) return ''
+  const createdAt = new Date(post.value.createdAt)
+  if (Number.isNaN(createdAt.getTime())) return post.value.createdAtLabel || ''
+  const diff = Date.now() - createdAt.getTime()
+  const minutes = Math.max(0, Math.floor(diff / 60000))
+  if (minutes < 1) return '방금 전'
+  if (minutes < 60) return `${minutes}분 전`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}시간 전`
   return new Intl.DateTimeFormat('ko-KR', {
     year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(post.value.createdAt))
+    month: '2-digit',
+    day: '2-digit',
+  }).format(createdAt)
 })
 
 async function load() {
@@ -66,6 +75,21 @@ async function confirmDelete(password) {
     deleteError.value = err.message
   } finally {
     deleteBusy.value = false
+  }
+}
+
+async function confirmEdit(password) {
+  editBusy.value = true
+  editError.value = ''
+  try {
+    await verifyPostPassword(props.id, password)
+    sessionStorage.setItem(`post-edit-password-${props.id}`, password)
+    editModalOpen.value = false
+    router.push({ name: 'post-edit', params: { id: props.id } })
+  } catch (err) {
+    editError.value = err.message || '비밀번호가 일치하지 않습니다.'
+  } finally {
+    editBusy.value = false
   }
 }
 
@@ -202,12 +226,6 @@ onMounted(load)
 
             <footer class="reddit-detail-actions">
               <div class="reddit-detail-actions__community">
-                <span class="reddit-action-button static">
-                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M5 5h14v11H9l-4 3V5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
-                  </svg>
-                  댓글 {{ post.commentCount || 0 }}
-                </span>
                 <button class="reddit-action-button" type="button" @click="sharePost">
                   <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <circle cx="18" cy="5" r="2.2" stroke="currentColor" stroke-width="1.8" />
@@ -220,9 +238,9 @@ onMounted(load)
               </div>
 
               <div class="reddit-detail-actions__manage">
-                <RouterLink class="reddit-manage-button" :to="{ name: 'post-edit', params: { id: post.id } }">
+                <button class="reddit-manage-button" type="button" @click="editModalOpen = true">
                   수정
-                </RouterLink>
+                </button>
                 <button class="reddit-manage-button danger" type="button" @click="deleteModalOpen = true">
                   삭제
                 </button>
@@ -233,19 +251,6 @@ onMounted(load)
             </footer>
           </div>
         </article>
-
-        <section class="reddit-comments-panel">
-          <header>
-            <h2>댓글 {{ post.commentCount || 0 }}개</h2>
-          </header>
-          <div class="reddit-comments-placeholder">
-            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M5 5h14v11H9l-4 3V5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
-            </svg>
-            <strong>댓글 영역</strong>
-            <p>댓글 API가 연결되면 이 위치에 최신 댓글부터 표시됩니다.</p>
-          </div>
-        </section>
       </template>
     </div>
 
@@ -256,6 +261,15 @@ onMounted(load)
       :error="deleteError"
       @close="deleteModalOpen = false"
       @confirm="confirmDelete"
+    />
+
+    <PasswordModal
+      :open="editModalOpen"
+      title="게시글 수정"
+      :busy="editBusy"
+      :error="editError"
+      @close="editModalOpen = false"
+      @confirm="confirmEdit"
     />
 
     <p v-if="notice" class="community-feed-toast" role="status">{{ notice }}</p>

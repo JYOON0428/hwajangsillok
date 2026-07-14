@@ -1,4 +1,4 @@
-export const categoryOptions = ['전체', '관광지', '문화시설', '축제·공연', '쇼핑']
+export const categoryOptions = ['전체', '관광지', '문화시설', '축제·공연', '쇼핑', '자유게시판']
 
 export const conditionOptions = [
   '기저귀 교환대',

@@ -11,11 +11,10 @@ const props = defineProps({ id: { type: String, default: '' } })
 const route = useRoute()
 const router = useRouter()
 const isEdit = computed(() => Boolean(props.id))
-const categories = ['관광지', '문화시설', '축제·공연', '쇼핑']
+const categories = ['관광지', '문화시설', '축제·공연', '쇼핑', '자유게시판']
 const MAX_IMAGES = 5
 
 const form = reactive({
-  nickname: '',
   password: '',
   category: '',
   title: '',
@@ -37,6 +36,8 @@ const fileInput = ref(null)
 
 const titleCount = computed(() => form.title.length)
 const contentCount = computed(() => form.content.length)
+const isFreeBoard = computed(() => form.category === '자유게시판')
+const editPasswordStorageKey = computed(() => (props.id ? `post-edit-password-${props.id}` : ''))
 const totalImageCount = computed(
   () => existingImageUrls.value.length + selectedImageFiles.value.length,
 )
@@ -65,15 +66,15 @@ function validate() {
     messages.push(message)
   }
 
-  if (!form.nickname.trim()) add('nickname', '닉네임을 입력해 주세요.')
-  else if (form.nickname.trim().length < 2) add('nickname', '닉네임은 2자 이상 입력해 주세요.')
-
-  if (!form.password.trim()) add('password', '수정·삭제용 비밀번호를 입력해 주세요.')
-  else if (form.password.length < 4) add('password', '비밀번호는 4자 이상 입력해 주세요.')
+  if (!isEdit.value) {
+    if (!form.password.trim()) add('password', '수정·삭제용 비밀번호를 입력해 주세요.')
+    else if (form.password.length < 4) add('password', '비밀번호는 4자 이상 입력해 주세요.')
+  }
 
   if (!form.category) add('category', '카테고리를 선택해 주세요.')
-  if (!selectedRestroom.value) add('restroom', '리뷰를 연결할 화장실을 선택해 주세요.')
-  if (!form.rating) add('rating', '청결도 별점을 선택해 주세요.')
+  if (!isFreeBoard.value && !selectedRestroom.value) add('restroom', '리뷰를 연결할 화장실을 선택해 주세요.')
+  if (!isFreeBoard.value && !form.rating) add('rating', '청결도 별점을 선택해 주세요.')
+  if (isEdit.value && !form.password) add('password', '상세 화면에서 비밀번호 확인 후 수정해 주세요.')
 
   if (!form.title.trim()) add('title', '제목을 입력해 주세요.')
   else if (form.title.trim().length < 2) add('title', '제목은 2자 이상 입력해 주세요.')
@@ -159,11 +160,15 @@ async function loadPreselectedRestroom() {
 
 async function loadForEdit() {
   if (!isEdit.value) return
+  const verifiedPassword = sessionStorage.getItem(editPasswordStorageKey.value)
+  if (!verifiedPassword) {
+    loadError.value = '게시글 상세 화면에서 비밀번호를 확인한 뒤 수정할 수 있습니다.'
+    return
+  }
   try {
     const post = await getPost(props.id)
     Object.assign(form, {
-      nickname: post.nickname || '',
-      password: '',
+      password: verifiedPassword,
       category: post.category || '',
       title: post.title || '',
       content: post.content || '',
@@ -193,15 +198,14 @@ async function submit() {
   busy.value = true
   try {
     const payload = {
-      nickname: form.nickname.trim(),
       password: form.password,
       category: form.category,
-      postType: '화장실 리뷰',
+      postType: isFreeBoard.value ? '자유게시판' : '화장실 리뷰',
       title: form.title.trim(),
       content: form.content.trim(),
-      rating: Number(form.rating),
-      restroomId: selectedRestroom.value.id,
-      restroomName: selectedRestroom.value.name,
+      rating: isFreeBoard.value ? '' : Number(form.rating),
+      restroomId: isFreeBoard.value ? '' : selectedRestroom.value.id,
+      restroomName: isFreeBoard.value ? '' : selectedRestroom.value.name,
       relatedPlace: form.category,
       imageUrls: existingImageUrls.value,
       imageUrl: existingImageUrls.value[0] || '',
@@ -209,6 +213,7 @@ async function submit() {
     const saved = isEdit.value
       ? await updatePost(props.id, payload, selectedImageFiles.value)
       : await createPost(payload, selectedImageFiles.value)
+    if (isEdit.value) sessionStorage.removeItem(editPasswordStorageKey.value)
     submitted.value = true
     router.push({ name: 'post-detail', params: { id: saved.id } })
   } catch (error) {
@@ -260,18 +265,12 @@ onBeforeUnmount(revokePreviews)
       <p v-if="loadError" class="editor-load-error">{{ loadError }}</p>
 
       <form v-else class="post-editor-form" novalidate @submit.prevent="submit">
-        <section class="editor-section credentials-section">
+        <section v-if="!isEdit" class="editor-section credentials-section">
           <div class="editor-section-heading">
             <div><span>01</span><h2>작성자 정보</h2></div>
             <p>회원가입 없이 사용하며, 비밀번호는 수정·삭제할 때만 사용합니다.</p>
           </div>
           <div class="credential-grid">
-            <label :class="{ 'has-field-error': fieldErrors.nickname }" data-field="nickname">
-              <span>닉네임 <em>필수</em></span>
-              <input v-model="form.nickname" maxlength="20" placeholder="표시할 닉네임을 입력하세요" autocomplete="nickname" />
-              <small>2~20자</small>
-              <b v-if="fieldErrors.nickname" class="field-error">{{ fieldErrors.nickname }}</b>
-            </label>
             <label :class="{ 'has-field-error': fieldErrors.password }" data-field="password">
               <span>수정용 비밀번호 <em>필수</em></span>
               <input v-model="form.password" type="password" maxlength="30" placeholder="4자 이상 입력하세요" autocomplete="new-password" />
@@ -301,9 +300,9 @@ onBeforeUnmount(revokePreviews)
             <p v-if="fieldErrors.category" class="field-error">{{ fieldErrors.category }}</p>
           </div>
 
-          <RestroomSelector v-model="selectedRestroom" :error="fieldErrors.restroom" />
+          <RestroomSelector v-if="!isFreeBoard" v-model="selectedRestroom" :error="fieldErrors.restroom" />
 
-          <div class="rating-field" :class="{ 'has-field-error': fieldErrors.rating }" data-field="rating">
+          <div v-if="!isFreeBoard" class="rating-field" :class="{ 'has-field-error': fieldErrors.rating }" data-field="rating">
             <div class="form-label-row">
               <label>청결도 <span class="required-mark">필수</span></label>
               <span>평균값은 지도 핀 색상에 반영됩니다.</span>

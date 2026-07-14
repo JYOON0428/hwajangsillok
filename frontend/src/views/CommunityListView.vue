@@ -9,7 +9,7 @@ import { listPosts } from '../services/postApi'
 const route = useRoute()
 const router = useRouter()
 
-const allowedCategories = ['전체', '관광지', '문화시설', '축제·공연', '쇼핑']
+const allowedCategories = ['전체', '관광지', '문화시설', '축제·공연', '쇼핑', '자유게시판']
 const allowedSorts = ['recent', 'popular', 'rating']
 const pageSize = 6
 
