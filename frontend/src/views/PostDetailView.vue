@@ -465,6 +465,56 @@ onMounted(() => {
                 {{ post.nickname || '익명 사용자' }} · {{ createdAtLabel }}
               </span>
             </div>
+
+            <div class="community-detail-top-actions" @click.stop>
+              <button class="community-detail-ai" type="button" @click="openAiForPost">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path
+                    d="M12 3.5 13.4 8l4.6 1.5-4.6 1.5L12 15.5 10.6 11 6 9.5 10.6 8 12 3.5Z"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    stroke-linejoin="round"
+                  />
+                  <path
+                    d="m18.5 15 .8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2Z"
+                    fill="currentColor"
+                  />
+                </svg>
+                AI에게 물어보기
+              </button>
+
+              <div class="community-detail-more" :class="{ open: postManageOpen }">
+                <button
+                  class="community-detail-more__toggle"
+                  type="button"
+                  aria-label="게시글 관리 메뉴"
+                  :aria-expanded="postManageOpen"
+                  @click="postManageOpen = !postManageOpen"
+                >
+                  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <circle cx="5" cy="12" r="1.8" />
+                    <circle cx="12" cy="12" r="1.8" />
+                    <circle cx="19" cy="12" r="1.8" />
+                  </svg>
+                </button>
+
+                <div v-if="postManageOpen" class="community-detail-more__menu">
+                  <button
+                    type="button"
+                    @click="postManageOpen = false; editModalOpen = true"
+                  >
+                    수정
+                  </button>
+                  <button
+                    class="danger"
+                    type="button"
+                    @click="postManageOpen = false; deleteModalOpen = true"
+                  >
+                    삭제
+                  </button>
+                </div>
+              </div>
+            </div>
           </header>
 
           <h1 class="community-detail-title">{{ post.title }}</h1>
@@ -576,7 +626,10 @@ onMounted(() => {
                 :downvotes="post.dislikeCount || 0"
               />
 
-              <a class="community-action-button" href="#comments">
+              <span
+                class="community-action-button community-action-button--static"
+                aria-label="댓글 수"
+              >
                 <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path
                     d="M5 5h14v11H9l-4 3V5Z"
@@ -586,7 +639,7 @@ onMounted(() => {
                   />
                 </svg>
                 댓글 {{ commentCount }}
-              </a>
+              </span>
 
               <button class="community-action-button" type="button" @click="sharePost">
                 <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -604,55 +657,6 @@ onMounted(() => {
               </button>
             </div>
 
-            <div class="community-detail-actions__secondary" @click.stop>
-              <button class="community-detail-ai" type="button" @click="openAiForPost">
-                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <path
-                    d="M12 3.5 13.4 8l4.6 1.5-4.6 1.5L12 15.5 10.6 11 6 9.5 10.6 8 12 3.5Z"
-                    stroke="currentColor"
-                    stroke-width="1.7"
-                    stroke-linejoin="round"
-                  />
-                  <path
-                    d="m18.5 15 .8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2Z"
-                    fill="currentColor"
-                  />
-                </svg>
-                AI에게 물어보기
-              </button>
-
-              <div class="community-detail-more" :class="{ open: postManageOpen }">
-                <button
-                  class="community-detail-more__toggle"
-                  type="button"
-                  aria-label="게시글 관리 메뉴"
-                  :aria-expanded="postManageOpen"
-                  @click="postManageOpen = !postManageOpen"
-                >
-                  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                    <circle cx="5" cy="12" r="1.8" />
-                    <circle cx="12" cy="12" r="1.8" />
-                    <circle cx="19" cy="12" r="1.8" />
-                  </svg>
-                </button>
-
-                <div v-if="postManageOpen" class="community-detail-more__menu">
-                  <button
-                    type="button"
-                    @click="postManageOpen = false; editModalOpen = true"
-                  >
-                    수정
-                  </button>
-                  <button
-                    class="danger"
-                    type="button"
-                    @click="postManageOpen = false; deleteModalOpen = true"
-                  >
-                    삭제
-                  </button>
-                </div>
-              </div>
-            </div>
           </footer>
         </article>
 
@@ -668,7 +672,7 @@ onMounted(() => {
             <div class="community-comment-form__topline">
               <div class="community-comment-form__identity">
                 <span class="community-comment-form__avatar" aria-hidden="true">
-                  {{ commentForm.nickname.charAt(0) || '익' }}
+                  <span>{{ commentForm.nickname.charAt(0) || '익' }}</span>
                 </span>
                 <div>
                   <strong>{{ commentForm.nickname }}</strong>
@@ -717,7 +721,7 @@ onMounted(() => {
           <div v-if="comments.length" class="community-comments-list">
             <article v-for="comment in comments" :key="comment.id" class="community-comment-item">
               <span class="community-comment-item__avatar" aria-hidden="true">
-                {{ commentInitial(comment) }}
+                <span>{{ commentInitial(comment) }}</span>
               </span>
 
               <div class="community-comment-item__body">

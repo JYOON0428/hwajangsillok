@@ -7,13 +7,17 @@ const props = defineProps({
   anchorLocation: { type: Object, default: null },
   selectedOnly: { type: Boolean, default: false },
   showResearchButton: { type: Boolean, default: true },
+  resultCount: { type: Number, default: 0 },
 })
 
 const emit = defineEmits(['select', 'search-current-map', 'open-detail'])
 
 const kakaoMapAppKey = import.meta.env.VITE_KAKAO_MAP_APP_KEY || ''
+const panelRef = ref(null)
 const mapContainer = ref(null)
 const mapReady = ref(false)
+const legendOpen = ref(true)
+const isFullscreen = ref(false)
 const mapError = ref('')
 let map = null
 let overlays = []
@@ -185,6 +189,29 @@ function renderMarkers({ preserveCenter = false } = {}) {
   }
 }
 
+
+async function toggleFullscreen() {
+  try {
+    if (!document.fullscreenElement) {
+      await panelRef.value?.requestFullscreen?.()
+    } else {
+      await document.exitFullscreen?.()
+    }
+  } catch {
+    // 브라우저가 전체화면을 지원하지 않아도 지도 이용에는 영향이 없다.
+  }
+}
+
+function syncFullscreenState() {
+  isFullscreen.value = document.fullscreenElement === panelRef.value
+  if (map && window.kakao?.maps) {
+    requestAnimationFrame(() => {
+      map.relayout()
+      renderMarkers({ preserveCenter: true })
+    })
+  }
+}
+
 function panToSelected() {
   if (!map || !selected.value || !window.kakao?.maps) return
   const latitude = Number(selected.value.latitude)
@@ -194,6 +221,7 @@ function panToSelected() {
 }
 
 onMounted(async () => {
+  document.addEventListener('fullscreenchange', syncFullscreenState)
   await nextTick()
   initMap()
 })
@@ -219,13 +247,14 @@ watch(
 )
 
 onBeforeUnmount(() => {
+  document.removeEventListener('fullscreenchange', syncFullscreenState)
   clearMarkers()
   map = null
 })
 </script>
 
 <template>
-  <section class="restroom-map-panel" aria-label="화장실 지도">
+  <section ref="panelRef" class="restroom-map-panel" aria-label="화장실 지도">
     <template v-if="canUseKakaoMap">
       <div ref="mapContainer" class="kakao-map-canvas" />
     </template>
@@ -265,7 +294,24 @@ onBeforeUnmount(() => {
       현재 지도에서 다시 검색
     </button>
 
-    <div class="map-color-legend">
+    <div class="map-secondary-controls">
+      <span class="map-result-count">{{ resultCount }}곳 표시</span>
+      <button class="map-fullscreen-button" type="button" :aria-label="isFullscreen ? '전체화면 종료' : '지도 전체화면'" @click="toggleFullscreen">
+        <svg v-if="!isFullscreen" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <svg v-else viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </button>
+    </div>
+
+    <button class="map-legend-toggle" type="button" :aria-expanded="legendOpen" @click="legendOpen = !legendOpen">
+      범례
+      <span aria-hidden="true">{{ legendOpen ? '−' : '+' }}</span>
+    </button>
+
+    <div v-if="legendOpen" class="map-color-legend map-color-legend--readable">
       <span><i class="high" />4.0 이상</span>
       <span><i class="mid" />3.0~3.9</span>
       <span><i class="low" />3.0 미만</span>

@@ -2177,28 +2177,28 @@ body {
 .category-write-button {
   min-height: 40px;
   gap: 7px;
-  padding: 0 14px;
-  border: 1px solid #c9e4f0;
+  padding: 0 15px;
+  border: 1px solid #0284c7;
   border-radius: 11px;
-  background: #fff;
-  color: #31576b;
-  box-shadow: 0 4px 12px rgba(28, 91, 122, .045);
+  background: linear-gradient(135deg, #0ea5e9, #0284c7);
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(2, 132, 199, .18);
   font-size: 13px;
-  font-weight: 850;
+  font-weight: 750;
 }
 
 .category-write-button svg {
   width: 16px;
   height: 16px;
-  color: #1687bb;
+  color: currentColor;
 }
 
 .category-write-button:hover {
-  border-color: #8ed0ed;
-  background: #eef9fe;
-  color: #126f99;
+  border-color: #0369a1;
+  background: linear-gradient(135deg, #079bdc, #0369a1);
+  color: #fff;
   transform: translateY(-1px);
-  box-shadow: 0 7px 16px rgba(28, 91, 122, .08);
+  box-shadow: 0 10px 22px rgba(2, 132, 199, .24);
 }
 
 .category-card-grid {
@@ -10201,5 +10201,1268 @@ body {
 
   .restroom-review-contribute button {
     width: 100%;
+  }
+}
+
+/* =========================================================
+   Post detail comment usability corrections — 2026-07-15
+   ========================================================= */
+
+/* 댓글 수는 정보 표시 전용: 해시 라우터 이동과 클릭 반응 제거 */
+.community-detail-actions .community-action-button--static {
+  cursor: default;
+  user-select: none;
+  pointer-events: none;
+}
+
+.community-detail-actions .community-action-button--static:hover {
+  background: transparent;
+  color: #667c87;
+}
+
+/* 위치·청결도는 반복되는 구분선 대신 하나의 부드러운 정보 면으로 묶음 */
+.community-detail-context {
+  min-height: 0;
+  margin-top: 24px;
+  padding: 14px 16px;
+  border: 0;
+  border-radius: 12px;
+  background: #f7fbfd;
+}
+
+.community-detail-context__place {
+  min-height: 36px;
+}
+
+.community-detail-rating {
+  min-height: 36px;
+  padding-left: 14px;
+  border-left: 1px solid #deebf1;
+}
+
+/* 액션 아래 불필요하게 멀리 떨어진 긴 선 제거 */
+.community-comments-panel {
+  margin-top: 34px;
+  padding-top: 0;
+  border-top: 0;
+}
+
+/* 자동 생성 닉네임의 한 글자를 원 정중앙에 배치 */
+.community-comment-form__avatar,
+.community-comment-item__avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
+  text-align: center;
+}
+
+/* 기존 광범위 선택자(.community-comment-item > div)의 flex 정렬을 무효화 */
+.community-comment-item > .community-comment-item__body {
+  width: 100%;
+  min-width: 0;
+  display: block;
+  text-align: left;
+}
+
+.community-comment-item__header {
+  width: 100%;
+}
+
+.community-comment-item__body > p {
+  width: 100%;
+  margin: 7px 0 0;
+  text-align: left;
+}
+
+@media (max-width: 760px) {
+  .community-detail-context {
+    padding: 13px 14px;
+  }
+
+  .community-detail-rating {
+    padding-left: 43px;
+    border-left: 0;
+  }
+
+  .community-comments-panel {
+    margin-top: 30px;
+  }
+}
+
+
+/* =========================================================
+   Post detail top controls and readability — 2026-07-15
+   ========================================================= */
+
+/* AI·관리 메뉴를 게시물 오른쪽 상단으로 이동 */
+.community-detail-meta {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.community-detail-top-actions {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: -3px;
+}
+
+.community-detail-top-actions .community-detail-ai {
+  min-height: 38px;
+  padding: 0 13px;
+  border: 1px solid #cfe4ee;
+  border-radius: 10px;
+  background: #fff;
+  color: #087caf;
+  box-shadow: none;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.community-detail-top-actions .community-detail-ai:hover {
+  border-color: #8fcde8;
+  background: #f2faff;
+  transform: none;
+}
+
+.community-detail-top-actions .community-detail-more__toggle {
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  min-height: 38px;
+}
+
+/* 추천·비추천·댓글 영역과 댓글 본문 사이에 가까운 구분선 배치 */
+.community-detail-actions {
+  margin-top: 18px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #e4edf2;
+}
+
+.community-comments-panel {
+  margin-top: 26px;
+}
+
+/* 한글 글리프가 원의 시각적 중앙에 오도록 내부 글자만 미세 조정 */
+.community-comment-form__avatar,
+.community-comment-item__avatar {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  line-height: 0;
+}
+
+.community-comment-form__avatar > span,
+.community-comment-item__avatar > span {
+  display: block;
+  line-height: 1;
+  transform: translateY(-1px);
+}
+
+/* 커뮤니티 목록 본문 가독성 강화 */
+.community-post-card__content-link > p {
+  color: #1f2933;
+  font-size: 14px;
+}
+
+@media (max-width: 760px) {
+  .community-detail-meta {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .community-detail-top-actions {
+    align-self: flex-end;
+    margin-top: 0;
+  }
+
+  .community-detail-actions {
+    padding-bottom: 16px;
+  }
+
+  .community-comments-panel {
+    margin-top: 22px;
+  }
+}
+
+@media (max-width: 460px) {
+  .community-detail-top-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .community-detail-top-actions .community-detail-ai {
+    min-height: 36px;
+  }
+
+  .community-detail-top-actions .community-detail-more__toggle {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+  }
+}
+
+/* =========================================================
+   Map search workspace — home-theme usability refinement
+   2026-07-15
+   Item 14 (map overlay size/distribution) intentionally unchanged.
+   ========================================================= */
+
+.app-shell--map-search {
+  min-height: 100vh;
+  background: #fff;
+}
+
+.map-search-view {
+  min-height: 100vh;
+  overflow: hidden;
+  background: #fff;
+}
+
+.map-search-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 20px;
+  border-bottom: 1px solid #e4edf2;
+  background: rgba(255, 255, 255, .96);
+  backdrop-filter: blur(14px);
+}
+
+.map-back-button {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid #dce8ee;
+  border-radius: 12px;
+  background: #f8fcff;
+  color: #31576b;
+  cursor: pointer;
+}
+
+.map-back-button svg {
+  width: 20px;
+  height: 20px;
+}
+
+.map-back-button:hover {
+  border-color: #a9d8ec;
+  background: #eef9ff;
+  color: #027ebc;
+}
+
+.map-search-brand {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin-right: 8px;
+  color: #102f40;
+  font-size: 19px;
+  font-weight: 900;
+  letter-spacing: -.5px;
+}
+
+.map-search-brand__mark {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #37b8f2, #087ebc);
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(2, 132, 199, .2);
+}
+
+.map-search-brand__mark svg {
+  width: 22px;
+  height: 22px;
+}
+
+.map-search-input-wrap {
+  width: min(720px, 56vw);
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  border: 1px solid #d9e8ef;
+  border-radius: 13px;
+  background: #f9fcfe;
+  color: #6d8997;
+  transition: border-color .16s ease, box-shadow .16s ease, background .16s ease;
+}
+
+.map-search-input-wrap:focus-within {
+  border-color: #72c8ee;
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(14, 165, 233, .08);
+}
+
+.map-search-input-wrap > svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+}
+
+.map-search-input-wrap input {
+  height: 44px;
+  padding: 0;
+  color: #183647;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.map-search-input-wrap input::placeholder {
+  color: #91a2aa;
+  font-weight: 500;
+}
+
+.map-search-submit {
+  min-height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 19px;
+  border: 0;
+  border-radius: 12px;
+  background: #123e53;
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(18, 62, 83, .16);
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.map-search-submit:hover {
+  background: #0a6f9e;
+}
+
+.map-search-submit svg {
+  width: 17px;
+  height: 17px;
+}
+
+.map-search-workspace {
+  display: grid;
+  grid-template-columns: minmax(310px, 330px) minmax(400px, 430px) minmax(0, 1fr);
+  height: calc(100vh - 72px);
+  min-height: 600px;
+  background: #fff;
+}
+
+.map-search-workspace--focused {
+  grid-template-columns: minmax(400px, 430px) minmax(0, 1fr);
+}
+
+.map-search-workspace--detail-closed {
+  grid-template-columns: minmax(310px, 330px) minmax(0, 1fr);
+}
+
+.restroom-list-pane,
+.restroom-detail-pane,
+.restroom-map-pane {
+  min-width: 0;
+  min-height: 0;
+}
+
+.restroom-list-pane {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #e4edf2;
+  background: #fff;
+}
+
+.result-control-panel {
+  flex: 0 0 auto;
+  padding: 18px 16px 15px;
+  border-bottom: 1px solid #e5edf1;
+  background: #fff;
+  box-shadow: none;
+  z-index: 3;
+}
+
+.result-heading-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.result-title-block {
+  display: grid !important;
+  gap: 5px !important;
+}
+
+.result-title-block strong {
+  color: #163547;
+  font-size: 17px;
+  line-height: 1.4;
+  font-weight: 850;
+  letter-spacing: -.35px;
+}
+
+.result-title-block span {
+  color: #6f8794;
+  font-size: 11px;
+  line-height: 1.45;
+  font-weight: 600;
+}
+
+.result-control-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, .82fr) auto;
+  align-items: end;
+  gap: 8px;
+  margin-top: 15px;
+}
+
+.result-select-control {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+  color: #6d818c;
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.result-select-control select {
+  width: 100%;
+  min-height: 39px;
+  padding: 0 30px 0 10px;
+  border: 1px solid #dce8ee;
+  border-radius: 10px;
+  background: #fff;
+  color: #385666;
+  outline: 0;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.result-select-control select:focus {
+  border-color: #7ecbf0;
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, .08);
+}
+
+.result-filter-toggle {
+  min-width: 62px;
+  min-height: 39px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 10px;
+  border: 1px solid #dce8ee;
+  border-radius: 10px;
+  background: #fff;
+  color: #536f7d;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.result-filter-toggle b {
+  min-width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #fff;
+  color: #087eb8;
+  font-size: 10px;
+}
+
+.result-filter-toggle.active {
+  border-color: #8ed5f4;
+  background: #eaf8ff;
+  color: #087bb5;
+}
+
+.active-filter-summary {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 11px;
+  padding: 9px 10px;
+  border-radius: 9px;
+  background: #f4f9fb;
+  color: #5e7784;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.active-filter-summary span {
+  min-width: 0;
+}
+
+.active-filter-summary button {
+  flex: 0 0 auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #087eb8;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.result-filter-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 11px;
+  padding-top: 11px;
+  border-top: 1px solid #edf2f5;
+}
+
+.result-filter-panel button {
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid #dce8ee;
+  border-radius: 999px;
+  background: #fff;
+  color: #607985;
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.result-filter-panel button:hover {
+  border-color: #9cd9f2;
+  color: #087bb5;
+}
+
+.result-filter-panel button.active {
+  border-color: #78ccef;
+  background: #eaf8ff;
+  color: #087bb5;
+}
+
+.restroom-result-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  background: #fff;
+  scrollbar-width: auto;
+  scrollbar-color: #b8cbd5 #f4f8fa;
+}
+
+.restroom-result-list::-webkit-scrollbar {
+  width: 9px;
+}
+
+.restroom-result-list::-webkit-scrollbar-track {
+  background: #f4f8fa;
+}
+
+.restroom-result-list::-webkit-scrollbar-thumb {
+  border: 2px solid #f4f8fa;
+  border-radius: 999px;
+  background: #b8cbd5;
+}
+
+.restroom-list-card {
+  width: 100%;
+  min-height: 128px;
+  display: block;
+  padding: 18px 16px 17px;
+  border: 0;
+  border-bottom: 1px solid #e9f0f3;
+  background: #fff;
+  color: #18303f;
+  text-align: left;
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease, padding .15s ease;
+}
+
+.restroom-list-card:hover {
+  background: #f8fcfe;
+}
+
+.restroom-list-card.selected {
+  padding-left: 13px;
+  border-left: 3px solid #0ea5e9;
+  background: #eaf8ff;
+}
+
+.restroom-list-card__top {
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.restroom-list-card__top strong {
+  color: #183647;
+  font-size: 15px;
+  line-height: 1.4;
+  font-weight: 820;
+  letter-spacing: -.2px;
+}
+
+.restroom-list-card.selected .restroom-list-card__top strong {
+  color: #0b4f70;
+}
+
+.distance-badge {
+  padding: 5px 8px;
+  background: #e8f7fe;
+  color: #087bb5;
+  font-size: 10px;
+}
+
+.restroom-card-metrics {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px 10px;
+  margin-top: 10px;
+  color: #647b87;
+  font-size: 11px;
+  line-height: 1.35;
+  font-weight: 650;
+}
+
+.restroom-card-metrics strong {
+  font-size: 11px;
+}
+
+.restroom-address {
+  max-width: 100%;
+  margin: 8px 0 0;
+  overflow: hidden;
+  color: #7b8f99;
+  font-size: 11px;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.restroom-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 11px;
+}
+
+.restroom-card-tags span {
+  min-height: 25px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 7px;
+  border-radius: 7px;
+  background: #f0f6f8;
+  color: #5b7481;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.restroom-card-tags .restroom-card-tags__more {
+  background: #e7f5fc;
+  color: #087bb5;
+}
+
+.restroom-detail-panel {
+  position: relative;
+  overflow-y: auto;
+  border-right: 1px solid #e4edf2;
+  background: #fff;
+  scrollbar-color: #b8cbd5 #f4f8fa;
+}
+
+.restroom-detail-header--refined {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  padding: 22px 20px 20px;
+  border-bottom: 1px solid #e5edf1;
+  background: rgba(255, 255, 255, .98);
+  backdrop-filter: blur(10px);
+}
+
+.restroom-detail-header__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.detail-eyebrow {
+  color: #087caf;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: .1px;
+}
+
+.restroom-detail-close {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid #dce8ee;
+  border-radius: 9px;
+  background: #fff;
+  color: #667d89;
+  cursor: pointer;
+}
+
+.restroom-detail-close:hover {
+  border-color: #a8d9ed;
+  background: #f2faff;
+  color: #087bb5;
+}
+
+.restroom-detail-close svg {
+  width: 17px;
+  height: 17px;
+}
+
+.restroom-detail-header--refined .detail-title-row {
+  margin-top: 5px;
+}
+
+.restroom-detail-header--refined .detail-title-row h2 {
+  margin: 0;
+  color: #143547;
+  font-size: 23px;
+  line-height: 1.35;
+  font-weight: 850;
+  letter-spacing: -.55px;
+}
+
+.restroom-detail-header--refined .detail-distance {
+  padding: 6px 9px;
+  background: #edf9ff;
+  font-size: 11px;
+}
+
+.restroom-detail-header--refined .detail-summary-line {
+  align-items: center;
+  margin-top: 13px;
+  font-size: 12px;
+}
+
+.restroom-detail-meta-list {
+  display: grid;
+  gap: 5px;
+  margin-top: 12px;
+}
+
+.restroom-detail-header--refined .detail-address,
+.restroom-detail-header--refined .detail-hours {
+  margin: 0;
+  color: #6a808c;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.restroom-detail-header--refined .refined-detail-actions {
+  grid-template-columns: minmax(0, 1fr) auto;
+  margin-top: 17px !important;
+}
+
+.restroom-detail-header--refined .detail-review-button,
+.restroom-detail-header--refined .detail-share-button {
+  min-height: 42px;
+  border-radius: 11px;
+}
+
+.restroom-detail-header--refined .detail-review-button {
+  justify-self: start;
+  min-width: 132px;
+  padding: 0 15px;
+  box-shadow: 0 7px 16px rgba(2, 132, 199, .16);
+  font-size: 12px;
+}
+
+.restroom-detail-header--refined .detail-share-button {
+  min-width: 74px;
+  padding: 0 12px;
+}
+
+.restroom-detail-section {
+  padding: 19px 20px;
+  border-bottom: 1px solid #e9f0f3;
+  background: #fff;
+}
+
+.restroom-detail-section__heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.restroom-detail-section__heading strong {
+  color: #244455;
+  font-size: 14px;
+  font-weight: 820;
+}
+
+.restroom-detail-section__heading small {
+  color: #8a9ba4;
+  font-size: 9px;
+}
+
+.facility-list-refined {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 11px;
+  margin-top: 13px;
+}
+
+.facility-list-refined span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #496a79;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.facility-list-refined svg {
+  width: 15px;
+  height: 15px;
+  color: #0ea5e9;
+}
+
+.facility-empty,
+.restroom-detail-data-note {
+  margin: 12px 0 0;
+  color: #8698a1;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.reviews-section--recent {
+  padding: 18px 20px 24px;
+}
+
+.reviews-heading--recent {
+  margin: 0 0 13px;
+}
+
+.reviews-heading--recent > div {
+  gap: 7px;
+}
+
+.reviews-heading--recent h3 {
+  color: #244455;
+  font-size: 15px;
+  font-weight: 830;
+}
+
+.reviews-all-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 5px 0;
+  border: 0;
+  background: transparent;
+  color: #087caf;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.reviews-all-link svg {
+  width: 14px;
+  height: 14px;
+}
+
+.review-card-list--recent {
+  display: block;
+}
+
+.restroom-detail-panel .restroom-review-card--compact {
+  padding: 15px 0;
+  border: 0;
+  border-bottom: 1px solid #edf2f5;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.restroom-detail-panel .restroom-review-card--compact:first-child {
+  padding-top: 2px;
+}
+
+.restroom-detail-panel .restroom-review-card--compact:last-child {
+  border-bottom: 0;
+}
+
+.restroom-detail-panel .restroom-review-card--compact:hover {
+  margin: 0 -10px;
+  padding-right: 10px;
+  padding-left: 10px;
+  border-radius: 10px;
+  background: #f6fbfd;
+  transform: none;
+}
+
+.restroom-detail-panel .restroom-review-card--compact h4 {
+  color: #244455;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.restroom-detail-panel .restroom-review-card--compact > p {
+  margin-top: 9px;
+  color: #58717e;
+  font-size: 11px;
+  line-height: 1.55;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.restroom-detail-panel .restroom-review-card__chevron {
+  color: #91a6b0;
+}
+
+.empty-review-state--compact {
+  padding: 24px 10px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.empty-review-state--compact .primary-button {
+  min-height: 37px;
+  margin-top: 12px;
+  padding: 0 13px;
+}
+
+.reviews-more-button {
+  width: 100%;
+  min-height: 38px;
+  margin-top: 10px;
+  border: 1px solid #d8e7ee;
+  border-radius: 10px;
+  background: #f8fcfe;
+  color: #087caf;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.reviews-more-button:hover {
+  border-color: #9ed8ef;
+  background: #eef9ff;
+}
+
+.restroom-map-pane {
+  position: relative;
+  background: #eaf5fa;
+}
+
+.map-secondary-controls {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 7;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.map-result-count {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 10px;
+  border: 1px solid #dce8ee;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .94);
+  color: #536f7d;
+  box-shadow: 0 6px 16px rgba(31, 99, 136, .1);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.map-fullscreen-button {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid #dce8ee;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .96);
+  color: #355f72;
+  box-shadow: 0 6px 16px rgba(31, 99, 136, .1);
+}
+
+.map-fullscreen-button:hover {
+  border-color: #9ed8ef;
+  color: #087caf;
+}
+
+.map-fullscreen-button svg {
+  width: 18px;
+  height: 18px;
+}
+
+.map-legend-toggle {
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  z-index: 7;
+  min-height: 32px;
+  display: none;
+  align-items: center;
+  gap: 7px;
+  padding: 0 10px;
+  border: 1px solid #dce8ee;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .96);
+  color: #486977;
+  box-shadow: 0 6px 16px rgba(31, 99, 136, .1);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.map-color-legend--readable {
+  grid-template-columns: 1fr;
+  gap: 7px;
+  padding: 12px 13px;
+  color: #536f7d;
+  font-size: 11px;
+}
+
+.kakao-restroom-marker.selected {
+  outline: 5px solid rgba(14, 165, 233, .23);
+  box-shadow: 0 8px 18px rgba(15, 91, 130, .32);
+}
+
+.restroom-map-panel:fullscreen {
+  width: 100vw;
+  height: 100vh;
+  min-height: 100vh;
+  background: #eaf5fa;
+}
+
+.restroom-map-panel:fullscreen .kakao-map-canvas {
+  height: 100%;
+}
+
+@media (max-width: 1280px) {
+  .map-search-workspace {
+    grid-template-columns: minmax(290px, 310px) minmax(370px, 400px) minmax(0, 1fr);
+  }
+
+  .map-search-workspace--focused {
+    grid-template-columns: minmax(370px, 400px) minmax(0, 1fr);
+  }
+
+  .map-search-workspace--detail-closed {
+    grid-template-columns: minmax(290px, 310px) minmax(0, 1fr);
+  }
+
+  .map-search-brand strong {
+    display: none;
+  }
+
+  .map-search-brand {
+    margin-right: 0;
+  }
+}
+
+@media (max-width: 900px) {
+  .map-search-view {
+    overflow: visible;
+  }
+
+  .map-search-toolbar {
+    height: 64px;
+    gap: 8px;
+    padding: 0 10px;
+  }
+
+  .map-search-brand {
+    display: none;
+  }
+
+  .map-back-button {
+    width: 38px;
+    height: 38px;
+  }
+
+  .map-search-input-wrap {
+    width: auto;
+    flex: 1;
+    min-height: 42px;
+  }
+
+  .map-search-input-wrap input {
+    height: 40px;
+    font-size: 13px;
+  }
+
+  .map-search-submit {
+    min-height: 42px;
+    padding: 0 13px;
+  }
+
+  .map-search-submit span {
+    display: none;
+  }
+
+  .mobile-result-tabs {
+    height: 46px;
+  }
+
+  .map-search-workspace,
+  .map-search-workspace--focused,
+  .map-search-workspace--detail-closed {
+    display: block;
+    height: auto;
+    min-height: calc(100vh - 110px);
+  }
+
+  .restroom-list-pane,
+  .restroom-detail-panel {
+    border-right: 0;
+  }
+
+  .mobile-list .restroom-list-pane {
+    display: flex;
+  }
+
+  .mobile-list .restroom-detail-pane {
+    display: block;
+  }
+
+  .mobile-list .restroom-map-pane {
+    display: none;
+  }
+
+  .mobile-map .restroom-list-pane {
+    display: none;
+  }
+
+  .mobile-map .restroom-map-pane {
+    display: block;
+    height: calc(100vh - 110px);
+  }
+
+  .mobile-map .restroom-detail-pane {
+    position: fixed;
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
+    z-index: 35;
+    display: block;
+    max-height: 54vh;
+    overflow-y: auto;
+    border: 1px solid #dce8ee;
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 20px 50px rgba(23, 66, 89, .24);
+  }
+
+  .mobile-map .restroom-detail-header--refined {
+    border-radius: 18px 18px 0 0;
+  }
+
+  .restroom-result-list {
+    max-height: 48vh;
+  }
+
+  .restroom-detail-panel {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .mobile-map .restroom-detail-panel {
+    overflow-y: auto;
+  }
+
+  .restroom-map-panel {
+    min-height: 100%;
+  }
+
+  .map-color-legend--readable {
+    bottom: 54px;
+  }
+
+  .map-legend-toggle {
+    display: inline-flex;
+  }
+}
+
+@media (max-width: 560px) {
+  .result-control-panel {
+    padding: 15px 13px 13px;
+  }
+
+  .result-title-block strong {
+    font-size: 16px;
+  }
+
+  .result-control-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, .8fr) 58px;
+    gap: 6px;
+  }
+
+  .result-select-control select {
+    padding-left: 8px;
+    font-size: 10px;
+  }
+
+  .result-filter-toggle {
+    min-width: 58px;
+    padding: 0 8px;
+  }
+
+  .restroom-list-card {
+    min-height: 120px;
+    padding: 16px 13px;
+  }
+
+  .restroom-list-card.selected {
+    padding-left: 10px;
+  }
+
+  .restroom-detail-header--refined,
+  .restroom-detail-section,
+  .reviews-section--recent {
+    padding-right: 15px;
+    padding-left: 15px;
+  }
+
+  .restroom-detail-header--refined .detail-title-row h2 {
+    font-size: 21px;
+  }
+
+  .restroom-detail-header--refined .detail-share-button span {
+    display: none;
+  }
+
+  .restroom-detail-header--refined .detail-share-button {
+    min-width: 42px;
+    width: 42px;
+    padding: 0;
+  }
+
+  .map-result-count {
+    display: none;
+  }
+
+  .map-secondary-controls {
+    top: 12px;
+    right: 12px;
   }
 }

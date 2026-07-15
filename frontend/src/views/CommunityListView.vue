@@ -298,7 +298,7 @@ watch(
                 <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                   <path d="m14.5 5.5 4 4M4 20l3.8-.8L19.2 7.8a1.4 1.4 0 0 0 0-2l-1-1a1.4 1.4 0 0 0-2 0L4.8 16.2 4 20Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
                 </svg>
-                글쓰기
+                리뷰 쓰기
               </RouterLink>
             </div>
           </section>
@@ -351,8 +351,8 @@ watch(
               </svg>
             </span>
             <strong>조건에 맞는 게시글이 없습니다.</strong>
-            <p>검색어를 바꾸거나 첫 글을 작성해보세요.</p>
-            <RouterLink :to="writeRoute">글쓰기</RouterLink>
+            <p>검색어를 바꾸거나 첫 리뷰를 작성해보세요.</p>
+            <RouterLink :to="writeRoute">리뷰 쓰기</RouterLink>
           </div>
 
           <PaginationBar
