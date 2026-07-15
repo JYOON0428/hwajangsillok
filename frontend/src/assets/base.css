@@ -12325,16 +12325,26 @@ body {
 }
 
 .nearby-home-list {
-  gap: 11px;
+  gap: 12px;
 }
 
 .nearby-restroom-card {
   min-height: 0;
-  padding: 17px 18px;
+  padding: 16px 18px;
   border-color: #dce9ef;
   border-radius: 16px;
   box-shadow: none;
   transition: border-color .16s ease, background .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+
+.nearby-restroom-card--horizontal {
+  display: flex;
+  align-items: center;
+}
+
+.nearby-card-main {
+  min-width: 0;
+  width: 100%;
 }
 
 .nearby-restroom-card:hover,
@@ -12354,11 +12364,23 @@ body {
   transform: none;
 }
 
-.nearby-card-top {
-  align-items: center;
+.nearby-card-top,
+.nearby-card-top--horizontal {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.nearby-card-title-wrap {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
 }
 
 .nearby-restroom-card h3 {
+  margin: 0;
   color: #173746;
   font-size: 16px;
   font-weight: 750;
@@ -12366,9 +12388,11 @@ body {
 }
 
 .nearby-distance {
-  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
   margin: 0;
-  padding: 4px 7px;
+  padding: 4px 8px;
   border-radius: 999px;
   background: #eaf7fd;
   color: #087caf;
@@ -12376,11 +12400,12 @@ body {
   font-weight: 800;
 }
 
-.nearby-card-summary {
+.nearby-card-summary,
+.nearby-card-summary--compact {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 7px 11px;
+  gap: 6px 10px;
   margin-top: 10px;
   color: #758995;
   font-size: 11px;
@@ -12406,16 +12431,25 @@ body {
   background: currentColor;
 }
 
-.nearby-review-count {
+.nearby-review-count,
+.nearby-time-label {
   color: #93a1a8;
   font-weight: 600;
 }
 
 .nearby-latest-review {
-  margin-top: 11px;
+  margin-top: 10px;
   color: #536e7c;
   font-size: 12px;
-  line-height: 1.55;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.nearby-latest-review.empty {
+  color: #90a0a8;
 }
 
 .nearby-card-bottom {
@@ -12531,13 +12565,14 @@ body {
 }
 
 /* =========================================================
-   Home nearby layout — map left, restroom cards stacked right
+   Home nearby cards — wide cards stacked beside the map
+   Search toolbar — remove duplicate brand beside the search
    ========================================================= */
 
 @media (min-width: 901px) {
   .nearby-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1.65fr) minmax(300px, .75fr);
+    grid-template-columns: minmax(0, 1.7fr) minmax(320px, .8fr);
     align-items: stretch;
     gap: 18px;
   }
@@ -12557,9 +12592,102 @@ body {
     gap: 12px;
   }
 
-  .nearby-home-list > .nearby-restroom-card,
-  .nearby-home-list > .nearby-restroom-card:nth-child(n + 4) {
+  .nearby-home-list > .nearby-restroom-card {
     width: 100%;
+    min-height: 142px;
     display: block;
+  }
+}
+
+.nearby-restroom-card {
+  padding: 17px 18px;
+}
+
+.nearby-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.nearby-card-title-block {
+  min-width: 0;
+}
+
+.nearby-card-title-block h3 {
+  margin: 6px 0 0;
+  overflow: hidden;
+  color: #173746;
+  font-size: 16px;
+  font-weight: 750;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nearby-card-rating {
+  flex: 0 0 auto;
+  padding-top: 1px;
+  font-size: 12px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.nearby-latest-review {
+  min-height: 19px;
+  margin: 12px 0 0;
+  display: -webkit-box;
+  overflow: hidden;
+  color: #617986;
+  font-size: 12px;
+  line-height: 1.5;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.nearby-latest-review.empty {
+  color: #9aa8ae;
+}
+
+.nearby-card-bottom {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px 10px;
+  margin-top: 13px;
+  padding-top: 12px;
+  border-top: 1px solid #edf2f5;
+  color: #8a9ca5;
+  font-size: 10px;
+}
+
+.nearby-card-bottom .open-status,
+.nearby-card-bottom .closed-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 750;
+}
+
+.nearby-card-bottom .open-status i,
+.nearby-card-bottom .closed-status i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.map-search-toolbar {
+  justify-content: flex-start;
+}
+
+.map-search-toolbar .map-search-input-wrap {
+  width: min(760px, 64vw);
+}
+
+@media (max-width: 900px) {
+  .map-search-toolbar .map-search-input-wrap {
+    width: auto;
+    flex: 1;
   }
 }
