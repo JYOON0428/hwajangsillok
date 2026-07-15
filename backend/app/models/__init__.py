@@ -80,7 +80,6 @@ class Review(Base):
 
 
 class Comment(Base):
-    """게시글 댓글 모델"""
     __tablename__ = "comments"
 
     id = Column(Integer, primary_key=True, index=True)

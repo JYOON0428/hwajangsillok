@@ -12,7 +12,8 @@ from urllib.request import Request, urlopen
 from sqlalchemy.orm import Session
 
 from app.database import Base, SessionLocal, engine
-from app.models import Post, Review, Toilet
+from app.models import Post, Review, Toilet, Comment
+import random
 
 BACKEND_ROOT = Path(__file__).resolve().parent
 TOILET_FILE_NAME = "공중화장실정보_서울특별시.csv"
@@ -395,41 +396,77 @@ def load_sample_posts() -> int:
     db = SessionLocal()
     try:
         count = 0
-        for index, place in enumerate(SAMPLE_PLACES, start=1):
+        nick_adjectives = ["상쾌한", "푸른", "조용한", "빠른", "따뜻한", "밝은"]
+        nick_nouns = ["여행자", "시민", "산책러", "탐험가", "방문객"]
+
+        for place in SAMPLE_PLACES:
+            # pick nearby toilet
             toilet = find_nearest_toilet(db, place["lat"], place["lon"])
-            post = Post(
-                category=place["category"],
-                title=place["title"],
-                content=place["content"],
-                password="1234",
-                rating=place["rating"],
-                nickname=place["nickname"],
-                post_type="화장실 리뷰",
-                related_place=place["name"],
-                restroom_name=toilet.name if toilet else "",
-                toilet_id=toilet.toilet_id if toilet else None,
-                recommendation_count=12 - index,
-                comment_count=index % 4,
-            )
-            db.add(post)
+            if not toilet:
+                continue
 
-            # Ensure post has a primary key assigned before creating a linked review
-            try:
-                db.flush()
-            except Exception:
-                pass
+            # create 1-3 posts for the place with varying ratings
+            post_count = random.randint(1, 3)
+            for i in range(post_count):
+                title = f"{place['title']} - 후기 #{i+1}"
+                rating = max(0.5, min(5.0, round(random.gauss(place['rating'], 1.0), 1)))
+                nickname = f"{random.choice(nick_adjectives)} {random.choice(nick_nouns)} #{random.randint(1,99)}"
+                # make post content slightly unique per post to avoid duplicate content
+                post_content = f"{place['content']} (방문 후기 {i+1})"
+                post = Post(
+                    category=place["category"],
+                    title=title,
+                    content=post_content,
+                    password="1234",
+                    rating=rating,
+                    nickname=nickname,
+                    post_type="화장실 리뷰",
+                    related_place=place["name"],
+                    restroom_name=toilet.name,
+                    toilet_id=toilet.toilet_id,
+                    recommendation_count=random.randint(0, 20),
+                    comment_count=0,
+                )
+                db.add(post)
+                try:
+                    db.flush()
+                except Exception:
+                    pass
 
-            if toilet:
+                # create a linked review for this post
+                # build varied review content using templates
+                review_templates = [
+                    "{nick}님이 남긴 솔직한 후기: {base}",
+                    "{base} 방문 후기 — 느낀 점: 괜찮았습니다.",
+                    "{base} 재방문 의사 있습니다.",
+                    "{base} (간단 후기)",
+                ]
+                review_content = random.choice(review_templates).format(nick=nickname, base=place["content"].split('。')[0])
                 db.add(
                     Review(
                         toilet_id=toilet.toilet_id,
                         post_id=post.post_id if getattr(post, "post_id", None) else None,
-                        rating=place["rating"],
-                        content=place["content"],
+                        rating=rating,
+                        content=review_content,
                         created_at=datetime.utcnow(),
                     )
                 )
-            count += 1
+
+                # create 0-3 comments for this post
+                comment_num = random.randint(0, 3)
+                for j in range(comment_num):
+                    c_nick = f"{random.choice(nick_adjectives)} {random.choice(nick_nouns)}"
+                    c = Comment(
+                        post_id=post.post_id if getattr(post, "post_id", None) else None,
+                        nickname=c_nick,
+                        password="1234",
+                        content=f"{c_nick}의 코멘트 #{j+1}",
+                        created_at=datetime.utcnow(),
+                    )
+                    db.add(c)
+                    post.comment_count = (post.comment_count or 0) + 1
+
+                count += 1
 
         db.commit()
         return count
