@@ -60,7 +60,6 @@ watch(() => props.modelValue, (value) => {
   <section class="restroom-selector" :class="{ 'has-field-error': error }" data-field="restroom">
     <div class="form-label-row">
       <label>관련 화장실 <span class="required-mark">필수</span></label>
-      <span>검색 결과에서 들어오면 자동 선택됩니다.</span>
     </div>
 
     <div v-if="modelValue && !opened" class="selected-restroom-card">

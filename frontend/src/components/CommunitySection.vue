@@ -15,7 +15,7 @@ function openCategory(category) {
 <template>
   <section class="content-section category-section">
     <div class="category-section-header">
-      <h2>카테고리</h2>
+      <h2>카테고리별 커뮤니티</h2>
 
       <RouterLink
         class="category-write-button"

@@ -5,6 +5,9 @@ import {
   createMockPost,
   updateMockPost,
   deleteMockPost,
+  createMockComment,
+  updateMockComment,
+  deleteMockComment,
 } from './mockRepository'
 
 const useMock = import.meta.env.VITE_USE_MOCK_API !== 'false'
@@ -101,4 +104,32 @@ export function verifyPostPassword(id, password) {
     method: 'POST',
     body: JSON.stringify({ password }),
   })
+}
+
+
+export function createComment(postId, payload) {
+  return useMock
+    ? createMockComment(postId, payload)
+    : request(`/api/posts/${postId}/comments`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+}
+
+export function updateComment(postId, commentId, payload) {
+  return useMock
+    ? updateMockComment(postId, commentId, payload)
+    : request(`/api/posts/${postId}/comments/${commentId}`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    })
+}
+
+export function deleteComment(postId, commentId, password) {
+  return useMock
+    ? deleteMockComment(postId, commentId, password)
+    : request(`/api/posts/${postId}/comments/${commentId}`, {
+      method: 'DELETE',
+      body: JSON.stringify({ password }),
+    })
 }
