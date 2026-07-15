@@ -10,9 +10,13 @@ const props = defineProps({
     type: Number,
     default: 0,
   },
+  downvotes: {
+    type: Number,
+    default: 0,
+  },
   label: {
     type: String,
-    default: '게시글 추천',
+    default: '게시글 추천과 비추천',
   },
 })
 
@@ -26,7 +30,8 @@ function readVote() {
 
 watch(storageKey, readVote, { immediate: true })
 
-const displayedScore = computed(() => Number(props.score || 0) + vote.value)
+const displayedUpvotes = computed(() => Number(props.score || 0) + (vote.value === 1 ? 1 : 0))
+const displayedDownvotes = computed(() => Number(props.downvotes || 0) + (vote.value === -1 ? 1 : 0))
 
 function toggleVote(direction) {
   vote.value = vote.value === direction ? 0 : direction
@@ -41,31 +46,29 @@ function toggleVote(direction) {
       class="post-vote-button up"
       :class="{ active: vote === 1 }"
       :aria-pressed="vote === 1"
-      aria-label="추천"
-      title="추천"
       @click.stop="toggleVote(1)"
     >
       <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="m12 5-6 7h4v7h4v-7h4l-6-7Z" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" />
+        <path d="M7.5 10.5 11 4.7c.8-1.3 2.8-.7 2.8.8v3.2h3.7a2 2 0 0 1 1.9 2.6l-1.7 6a2 2 0 0 1-1.9 1.4H7.5v-8.2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
+        <path d="M4 10.5h3.5v8.2H4z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
       </svg>
+      <span>추천</span>
+      <strong>{{ displayedUpvotes }}</strong>
     </button>
-
-    <strong :class="{ positive: vote === 1, negative: vote === -1 }">
-      {{ displayedScore }}
-    </strong>
 
     <button
       type="button"
       class="post-vote-button down"
       :class="{ active: vote === -1 }"
       :aria-pressed="vote === -1"
-      aria-label="비추천"
-      title="비추천"
       @click.stop="toggleVote(-1)"
     >
       <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="m12 19 6-7h-4V5h-4v7H6l6 7Z" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" />
+        <path d="M7.5 13.5 11 19.3c.8 1.3 2.8.7 2.8-.8v-3.2h3.7a2 2 0 0 0 1.9-2.6l-1.7-6a2 2 0 0 0-1.9-1.4H7.5v8.2Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
+        <path d="M4 5.3h3.5v8.2H4z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
       </svg>
+      <span>비추천</span>
+      <strong>{{ displayedDownvotes }}</strong>
     </button>
   </div>
 </template>

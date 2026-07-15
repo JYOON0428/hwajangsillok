@@ -17,7 +17,9 @@ const router = createRouter({
     { path: '/community/:id/edit', name: 'post-edit', component: PostFormView, props: true },
     { path: '/:pathMatch(.*)*', name: 'not-found', component: NotFoundView },
   ],
-  scrollBehavior() {
+  scrollBehavior(to, from, savedPosition) {
+    if (savedPosition) return savedPosition
+    if (to.hash) return { el: to.hash, top: 88, behavior: 'smooth' }
     return { top: 0 }
   },
 })

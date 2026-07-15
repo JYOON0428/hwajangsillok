@@ -1,6 +1,6 @@
 import { initialPosts, restrooms, restroomReviews } from '../data/mockData'
 
-const POST_KEY = 'hwajangsillok.posts.reddit-v1'
+const POST_KEY = 'hwajangsillok.posts.community-v2'
 
 function clone(value) {
   return typeof structuredClone === 'function'
@@ -30,7 +30,7 @@ export async function listMockPosts({
   keyword = '',
   sort = 'recent',
   page = 1,
-  size = 9,
+  size = 10,
 } = {}) {
   await wait()
   let items = readPosts()
@@ -63,12 +63,10 @@ export async function listMockPosts({
       (b.recommendationCount || 0) - (a.recommendationCount || 0)
       || (b.commentCount || 0) - (a.commentCount || 0)
       || new Date(b.createdAt) - new Date(a.createdAt),
-    rating: (a, b) => {
-      if (a.rating == null && b.rating == null) return new Date(b.createdAt) - new Date(a.createdAt)
-      if (a.rating == null) return 1
-      if (b.rating == null) return -1
-      return b.rating - a.rating || new Date(b.createdAt) - new Date(a.createdAt)
-    },
+    comments: (a, b) =>
+      (b.commentCount || 0) - (a.commentCount || 0)
+      || (b.recommendationCount || 0) - (a.recommendationCount || 0)
+      || new Date(b.createdAt) - new Date(a.createdAt),
   }
 
   items = items.slice().sort(sorters[sort] || sorters.recent)
@@ -96,7 +94,10 @@ export async function createMockPost(payload) {
   const post = {
     id,
     recommendationCount: 0,
+    dislikeCount: 0,
     commentCount: 0,
+    commentPreview: [],
+    comments: [],
     createdAt: new Date().toISOString(),
     imageUrl: '',
     imageUrls: [],
