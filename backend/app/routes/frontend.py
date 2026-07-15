@@ -1,5 +1,6 @@
 import json
 import math
+import re
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -377,15 +378,7 @@ def _execute_get_nearby_toilets(
 
         dist = _distance_meters(lat, lon, toilet.latitude, toilet.longitude)
         if dist <= radius:
-            normalized = _normalize_restroom(db, toilet, dist)
-            items.append({
-                "name": normalized.get("name"),
-                "address": normalized.get("address"),
-                "distanceMeters": round(dist, 2),
-                "rating": normalized.get("rating"),
-                "diaper_table": bool(toilet.diaper_changing_table),
-                "handicap": bool(toilet.handicap_facility)
-            })
+            items.append(_chat_restroom_summary(db, toilet, dist))
 
     # 정렬 (OpenAI가 요청한 기준에 따라)
     if sort_by == "rating":
@@ -396,6 +389,721 @@ def _execute_get_nearby_toilets(
         items.sort(key=lambda i: i["distanceMeters"])
 
     return items[:limit]
+
+
+CHAT_FIXED_CURRENT_LOCATION = {
+    "label": "역삼역 멀티캠퍼스",
+    "latitude": 37.5012743,
+    "longitude": 127.0395850,
+}
+
+CHAT_RESTROOM_KEYWORDS = (
+    "화장실", "공중화장실", "장실", "변기", "기저귀", "장애", "비상벨",
+    "개방", "24시간", "청결", "깨끗", "평점", "거리", "가까운", "근처",
+    "주변", "위치", "추천",
+)
+CHAT_REVIEW_KEYWORDS = ("리뷰", "후기", "평점", "평가", "어때", "깨끗", "청결", "좋아")
+CHAT_REVIEW_SUMMARY_KEYWORDS = ("리뷰 보여", "리뷰 알려", "리뷰 요약", "후기 보여", "후기 알려", "후기 요약", "어때")
+CHAT_COMMUNITY_KEYWORDS = ("커뮤니티", "게시판", "게시글", "글", "자유게시판", "댓글")
+CHAT_OFF_TOPIC_KEYWORDS = ("밥", "점심", "저녁", "음식", "영화", "노래", "게임", "공부")
+CHAT_FOLLOWUP_KEYWORDS = (
+    "개", "곳", "더", "보여줘", "알려줘", "찾아줘", "추천해줘",
+    "거리순", "평점순", "리뷰", "후기",
+)
+CHAT_COUNT_WORDS = {
+    "한": 1,
+    "하나": 1,
+    "두": 2,
+    "둘": 2,
+    "세": 3,
+    "셋": 3,
+    "네": 4,
+    "넷": 4,
+    "다섯": 5,
+    "여섯": 6,
+}
+CHAT_STOPWORDS = {
+    "화장실", "공중화장실", "추천", "리뷰", "후기", "평점", "평가", "어때",
+    "근처", "주변", "내", "현재", "지금", "위치", "있는", "없는", "좋은",
+    "깨끗한", "깨끗", "청결", "장소", "곳", "좀", "봐줘", "알려줘", "찾아줘",
+    "해줘", "부탁해", "거리순", "평점순", "가까운", "제일", "가장",
+    "대신", "요약해줘", "요약", "어떤지도", "있는걸로",
+    "장애인용", "장애인", "시설", "시설이", "있는", "있는걸", "기저귀",
+    "교환대", "화장실만", "화장실로", "보여줘",
+}
+
+
+def _chat_contains_any(text: str, keywords: tuple[str, ...] | set[str]) -> bool:
+    return any(keyword in text for keyword in keywords)
+
+
+def _compact_text(value: Any, limit: int = 120) -> str:
+    text = " ".join(str(value or "").split())
+    if len(text) <= limit:
+        return text
+    return text[:limit].rstrip() + "..."
+
+
+def _valid_coordinates(latitude: Any, longitude: Any) -> bool:
+    try:
+        lat = float(latitude)
+        lon = float(longitude)
+    except (TypeError, ValueError):
+        return False
+    return -90 <= lat <= 90 and -180 <= lon <= 180
+
+
+def _is_short_greeting(message: str) -> bool:
+    cleaned = re.sub(r"[\s!?.~]+", "", message.lower())
+    return cleaned in {"안녕", "안녕하세요", "하이", "hi", "hello", "ㅎㅇ", "헬로"}
+
+
+def _chat_requested_limit(message: str, default: int = 3) -> int:
+    text = message.strip()
+    match = re.search(r"(\d+)\s*(?:개|곳)", text)
+    if match:
+        return max(1, min(6, int(match.group(1))))
+
+    for word, count in CHAT_COUNT_WORDS.items():
+        if re.search(rf"{word}\s*(?:개|곳)", text):
+            return count
+    return default
+
+
+def _chat_has_count_request(message: str) -> bool:
+    text = message.strip()
+    if re.search(r"\d+\s*(?:개|곳)", text):
+        return True
+    return any(re.search(rf"{word}\s*(?:개|곳)", text) for word in CHAT_COUNT_WORDS)
+
+
+def _is_chat_followup_request(message: str) -> bool:
+    text = message.strip()
+    if _chat_has_count_request(text):
+        return True
+    return _chat_contains_any(text, CHAT_FOLLOWUP_KEYWORDS)
+
+
+def _classify_chat_intent(message: str) -> str:
+    text = message.strip()
+    if _is_short_greeting(text):
+        return "greeting"
+    restroom_keywords_without_recommend = tuple(
+        keyword for keyword in CHAT_RESTROOM_KEYWORDS if keyword != "추천"
+    )
+    if _chat_contains_any(text, CHAT_OFF_TOPIC_KEYWORDS) and not _chat_contains_any(text, restroom_keywords_without_recommend):
+        return "general"
+    if _chat_contains_any(text, CHAT_COMMUNITY_KEYWORDS):
+        return "community"
+    if _chat_contains_any(text, ("찾아", "추천", "보여", "알려")) and _chat_contains_any(text, CHAT_RESTROOM_KEYWORDS):
+        return "restroom_search"
+    if _chat_contains_any(text, CHAT_REVIEW_SUMMARY_KEYWORDS):
+        return "review"
+    if _chat_contains_any(text, CHAT_REVIEW_KEYWORDS):
+        return "restroom_search"
+    if _chat_contains_any(text, CHAT_RESTROOM_KEYWORDS):
+        return "restroom_search"
+    if _is_chat_followup_request(text):
+        if _chat_contains_any(text, CHAT_REVIEW_KEYWORDS):
+            return "review"
+        return "restroom_search"
+    return "general"
+
+
+def _chat_search_tokens(message: str) -> list[str]:
+    raw_tokens = re.split(r"[\s,./!?()\[\]{}\"'“”‘’]+", message)
+    tokens: list[str] = []
+    for token in raw_tokens:
+        token = token.strip()
+        for suffix in ("에서", "으로", "로", "은", "는", "이", "가", "을", "를", "만"):
+            if token.endswith(suffix) and len(token) > len(suffix) + 1:
+                token = token[: -len(suffix)]
+                break
+        if len(token) >= 2 and token not in CHAT_STOPWORDS:
+            tokens.append(token)
+    return tokens[:6]
+
+
+def _extract_place_keyword(db: Session, message: str) -> str:
+    text = message.strip()
+    if not text:
+        return ""
+
+    for key in sorted(KEYWORD_CENTERS, key=len, reverse=True):
+        if key in text:
+            return key
+
+    for district in sorted(DISTRICT_CENTERS, key=len, reverse=True):
+        if district in text:
+            return district
+
+    for poi in _load_poi_index():
+        title = poi["title"]
+        if len(title) >= 2 and title in text:
+            return title
+
+    match = re.search(r"([가-힣A-Za-z0-9·()\s]{2,30}?)(?:에서|근처|주변|인근|기준)", text)
+    if match:
+        candidate = match.group(1).strip()
+        candidate = re.sub(r"^(?:내|현재|지금)\s*", "", candidate).strip()
+        candidate = re.sub(r"(?:화장실|공중화장실)$", "", candidate).strip()
+        if candidate and candidate not in CHAT_STOPWORDS:
+            return candidate
+
+    return ""
+
+
+def _chat_history_text(history: Any, current_message: str) -> str:
+    if not isinstance(history, list):
+        return ""
+
+    snippets: list[str] = []
+    for item in reversed(history[-8:]):
+        if not isinstance(item, dict):
+            continue
+        content = str(item.get("content") or "").strip()
+        if not content or content == current_message:
+            continue
+        snippets.append(_compact_text(content, 180))
+        if len(snippets) >= 3:
+            break
+    return " ".join(reversed(snippets))
+
+
+def _chat_message_with_context(db: Session, message: str, history: Any) -> str:
+    if not _is_chat_followup_request(message):
+        return message
+    if _has_specific_place_hint(db, message) or _is_current_location_request(message):
+        return message
+    previous = _chat_history_text(history, message)
+    if not previous:
+        return message
+    return f"{message} {previous}"
+
+
+def _find_toilet_from_message(db: Session, message: str) -> Toilet | None:
+    text = message.strip()
+    if not text:
+        return None
+
+    base_query = db.query(Toilet).filter(Toilet.latitude != 0, Toilet.longitude != 0)
+    for toilet in base_query.all():
+        name = (toilet.name or "").strip()
+        if len(name) >= 2 and name in text:
+            return toilet
+
+    for token in _chat_search_tokens(text):
+        if len(token) < 3:
+            continue
+        toilet = (
+            base_query
+            .filter(Toilet.name.contains(token))
+            .first()
+        )
+        if toilet:
+            return toilet
+    return None
+
+
+def _has_specific_place_hint(db: Session, message: str) -> bool:
+    text = message.strip()
+    if _extract_place_keyword(db, text):
+        return True
+    if _find_toilet_from_message(db, text):
+        return True
+    return False
+
+
+def _is_current_location_request(message: str) -> bool:
+    return _chat_contains_any(message, ("내 주변", "현재 위치", "지금 위치", "여기", "근처", "주변"))
+
+
+def _chat_center_label(db: Session, message: str) -> str:
+    text = message.strip()
+    place_keyword = _extract_place_keyword(db, text)
+    if place_keyword:
+        return place_keyword
+    toilet = _find_toilet_from_message(db, text)
+    if toilet:
+        return toilet.name
+    return "검색 위치"
+
+
+def _resolve_chat_center(db: Session, message: str, user_lat: Any = None, user_lon: Any = None) -> dict[str, Any]:
+    if _valid_coordinates(user_lat, user_lon):
+        return {"label": "현재 위치", "latitude": float(user_lat), "longitude": float(user_lon)}
+
+    if _is_current_location_request(message) and not _has_specific_place_hint(db, message):
+        return CHAT_FIXED_CURRENT_LOCATION.copy()
+
+    place_keyword = _extract_place_keyword(db, message)
+    center_lat, center_lon = _resolve_center(db, place_keyword or message)
+    return {
+        "label": place_keyword or _chat_center_label(db, message),
+        "latitude": center_lat,
+        "longitude": center_lon,
+    }
+
+
+def _chat_radius(message: str) -> int:
+    text = message.lower()
+    if "2km" in text or "2킬로" in text or "2000" in text:
+        return 2000
+    if "500" in text:
+        return 500
+    if "200" in text:
+        return 200
+    return 1000
+
+
+def _chat_sort_by(message: str) -> str:
+    if "거리" in message or "가까운" in message:
+        return "distance"
+    if _chat_contains_any(message, ("평점", "리뷰", "후기", "깨끗", "청결", "좋은")):
+        return "rating"
+    return "distance"
+
+
+def _chat_conditions(message: str) -> dict[str, bool]:
+    needs_review = bool(
+        re.search(r"(?:리뷰|후기).{0,8}(?:있는|있|좋은|좋|많은|많)", message)
+        or re.search(r"(?:평점|평가).{0,8}(?:좋은|높은|좋|높)", message)
+    )
+    return {
+        "needs_diaper_table": "기저귀" in message,
+        "needs_handicap": "장애" in message,
+        "needs_emergency_bell": "비상벨" in message,
+        "needs_review": needs_review,
+    }
+
+
+def _chat_review_snippets(db: Session, toilet_id: int, limit: int = 3) -> list[dict[str, Any]]:
+    snippets: list[dict[str, Any]] = []
+
+    for review in (
+        db.query(Review)
+        .filter(Review.toilet_id == toilet_id)
+        .order_by(Review.created_at.desc())
+        .limit(limit)
+        .all()
+    ):
+        snippets.append(
+            {
+                "title": "청결도 리뷰",
+                "rating": review.rating,
+                "content": _compact_text(review.content or "리뷰 내용이 없습니다.", 110),
+                "createdAtLabel": _time_label(review.created_at),
+                "_created_at": review.created_at or datetime.min,
+            }
+        )
+
+    for post in (
+        db.query(Post)
+        .filter(Post.toilet_id == toilet_id)
+        .order_by(Post.created_at.desc())
+        .limit(limit)
+        .all()
+    ):
+        snippets.append(
+            {
+                "title": _compact_text(post.title, 60),
+                "rating": post.rating,
+                "content": _compact_text(post.content, 110),
+                "createdAtLabel": _time_label(post.created_at),
+                "_created_at": post.created_at or datetime.min,
+            }
+        )
+
+    snippets.sort(key=lambda item: item["_created_at"], reverse=True)
+    cleaned = []
+    for item in snippets[:limit]:
+        item.pop("_created_at", None)
+        cleaned.append(item)
+    return cleaned
+
+
+def _chat_restroom_summary(db: Session, toilet: Toilet, distance: float | None = None) -> dict[str, Any]:
+    normalized = _normalize_restroom(db, toilet, distance)
+    snippets = _chat_review_snippets(db, toilet.toilet_id)
+    return {
+        "id": normalized["id"],
+        "toiletId": normalized["toiletId"],
+        "name": normalized["name"],
+        "address": normalized["address"],
+        "distanceMeters": normalized["distanceMeters"],
+        "rating": normalized["rating"],
+        "reviewCount": normalized["reviewCount"],
+        "latestReview": normalized["latestReview"],
+        "latestReviewLabel": normalized["latestReviewLabel"],
+        "tags": normalized["tags"],
+        "facilities": normalized["facilities"],
+        "openNow": normalized["openNow"],
+        "openingHours": normalized["openingHours"],
+        "latitude": normalized["latitude"],
+        "longitude": normalized["longitude"],
+        "mapPosition": normalized["mapPosition"],
+        "reviewSnippets": snippets,
+        "diaper_table": bool(toilet.diaper_changing_table),
+        "handicap": bool(toilet.handicap_facility),
+        "emergency_bell": bool(toilet.emergency_bell),
+    }
+
+
+def _search_chat_restrooms(
+    db: Session,
+    message: str,
+    user_lat: Any = None,
+    user_lon: Any = None,
+    limit: int = 3,
+) -> dict[str, Any]:
+    center = _resolve_chat_center(db, message, user_lat, user_lon)
+    radius = _chat_radius(message)
+    sort_by = _chat_sort_by(message)
+    conditions = _chat_conditions(message)
+
+    query = db.query(Toilet).filter(Toilet.latitude != 0, Toilet.longitude != 0)
+    if conditions["needs_diaper_table"]:
+        query = query.filter(Toilet.diaper_changing_table.is_(True))
+    if conditions["needs_handicap"]:
+        query = query.filter(Toilet.handicap_facility.is_(True))
+    if conditions["needs_emergency_bell"]:
+        query = query.filter(Toilet.emergency_bell.is_(True))
+
+    def collect_items(search_radius: int) -> list[dict[str, Any]]:
+        collected: list[dict[str, Any]] = []
+        for toilet in query.all():
+            distance = _distance_meters(center["latitude"], center["longitude"], toilet.latitude, toilet.longitude)
+            if distance > search_radius:
+                continue
+            summary = _chat_restroom_summary(db, toilet, distance)
+            if conditions["needs_review"] and summary["reviewCount"] <= 0:
+                continue
+            collected.append(summary)
+        return collected
+
+    items = collect_items(radius)
+    expanded_radius = radius
+    if conditions["needs_review"] and not items and radius < 3000:
+        expanded_radius = 3000
+        items = collect_items(expanded_radius)
+
+    if sort_by == "rating":
+        items.sort(key=lambda item: (-(item["rating"] or 0), -item["reviewCount"], item["distanceMeters"]))
+    else:
+        items.sort(key=lambda item: item["distanceMeters"])
+
+    return {
+        "center": center,
+        "radius": expanded_radius,
+        "sortBy": sort_by,
+        "conditions": conditions,
+        "items": items[:limit],
+    }
+
+
+def _chat_post_summary(db: Session, post: Post) -> dict[str, Any]:
+    normalized = _normalize_post(post, _anonymous_name_for_post(db, post))
+    return {
+        "id": normalized["id"],
+        "title": _compact_text(normalized["title"], 70),
+        "content": _compact_text(normalized["content"], 130),
+        "category": normalized["category"],
+        "restroomId": normalized["restroomId"],
+        "restroomName": normalized["restroomName"],
+        "rating": normalized["rating"],
+        "recommendationCount": normalized["recommendationCount"],
+        "createdAtLabel": normalized["createdAtLabel"],
+    }
+
+
+def _search_chat_posts(
+    db: Session,
+    message: str,
+    focus_toilet: Toilet | None = None,
+    limit: int = 4,
+) -> list[dict[str, Any]]:
+    query = db.query(Post)
+    if focus_toilet:
+        query = query.filter(Post.toilet_id == focus_toilet.toilet_id)
+    else:
+        conditions = []
+        for token in _chat_search_tokens(message):
+            like = f"%{token}%"
+            conditions.extend(
+                [
+                    Post.title.like(like),
+                    Post.content.like(like),
+                    Post.related_place.like(like),
+                    Post.restroom_name.like(like),
+                ]
+            )
+        if conditions:
+            query = query.filter(or_(*conditions))
+
+    if _chat_sort_by(message) == "rating":
+        query = query.order_by(Post.rating.desc(), Post.recommendation_count.desc(), Post.created_at.desc())
+    else:
+        query = query.order_by(Post.created_at.desc())
+
+    return [_chat_post_summary(db, post) for post in query.limit(limit).all()]
+
+
+def _build_chat_context(
+    db: Session,
+    message: str,
+    history: Any = None,
+    user_lat: Any = None,
+    user_lon: Any = None,
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    intent = _classify_chat_intent(message)
+    lookup_message = _chat_message_with_context(db, message, history)
+    requested_limit = _chat_requested_limit(message)
+    context: dict[str, Any] = {
+        "intent": intent,
+        "message": message,
+        "lookupMessage": lookup_message,
+        "requestedLimit": requested_limit,
+        "needsPlace": False,
+        "restrooms": [],
+        "communityPosts": [],
+    }
+
+    if intent == "general":
+        place_info = _chat_place_info(db, message)
+        if place_info:
+            context["placeInfo"] = place_info
+        return context, []
+
+    if intent == "greeting":
+        return context, []
+
+    focus_toilet = _find_toilet_from_message(db, lookup_message)
+    place_keyword = _extract_place_keyword(db, lookup_message)
+    has_place = (
+        bool(place_keyword)
+        or focus_toilet is not None
+        or _valid_coordinates(user_lat, user_lon)
+        or _is_current_location_request(lookup_message)
+    )
+
+    if not has_place:
+        context["needsPlace"] = True
+        count_text = f" {requested_limit}곳" if _chat_has_count_request(message) else ""
+        context["question"] = f"어느 장소 기준으로{count_text} 찾아볼까요? 예: 강남역, 경복궁, 역삼역처럼 입력해 주세요."
+        return context, []
+
+    if focus_toilet and intent in {"review", "community"}:
+        focused = _chat_restroom_summary(db, focus_toilet)
+        context["focusedRestroom"] = focused
+        context["communityPosts"] = _search_chat_posts(db, lookup_message, focus_toilet)
+        return context, [focused]
+
+    search_result = _search_chat_restrooms(
+        db,
+        lookup_message,
+        user_lat,
+        user_lon,
+        limit=requested_limit,
+    )
+    context.update(
+        {
+            "center": search_result["center"],
+            "radius": search_result["radius"],
+            "sortBy": search_result["sortBy"],
+            "conditions": search_result["conditions"],
+            "restrooms": search_result["items"],
+        }
+    )
+
+    if intent in {"review", "community"}:
+        context["communityPosts"] = _search_chat_posts(db, lookup_message)
+
+    return context, search_result["items"]
+
+
+def _trim_chat_answer(answer: str, max_chars: int = 360) -> str:
+    text = " ".join(str(answer or "").split())
+    if len(text) <= max_chars:
+        return text
+
+    sentences = re.split(r"(?<=[.!?。！？])\s+", text)
+    picked: list[str] = []
+    current_length = 0
+    for sentence in sentences:
+        if current_length + len(sentence) > max_chars:
+            break
+        picked.append(sentence)
+        current_length += len(sentence)
+        if len(picked) >= 3:
+            break
+    if picked:
+        return " ".join(picked)
+    return text[:max_chars].rstrip() + "..."
+
+
+def _fallback_chat_answer(context: dict[str, Any]) -> str:
+    intent = context.get("intent")
+    if intent == "greeting":
+        return "안녕하세요! 장소나 조건을 말해주시면 가까운 화장실을 찾아드릴게요."
+    if intent == "general":
+        place_info = context.get("placeInfo")
+        if place_info:
+            address = f" 위치는 {place_info['address']} 쪽이에요." if place_info.get("address") else ""
+            return f"네, {place_info['title']} 알아요. 서울의 {place_info['category']}로 볼 수 있는 장소예요.{address}"
+        return "좋아요. 편하게 물어보세요."
+    if context.get("needsPlace"):
+        return context.get("question") or "어느 장소 기준으로 찾아볼까요?"
+
+    focused = context.get("focusedRestroom")
+    if focused:
+        rating = focused["rating"]
+        snippets = focused.get("reviewSnippets") or []
+        rating_text = "리뷰 없음" if rating is None else f"평점 {rating}"
+        if snippets:
+            return f"{focused['name']}은 {rating_text}이고, 최근 후기는 '{snippets[0]['content']}' 정도로 요약돼요."
+        return f"{focused['name']}은 {rating_text}이에요. 아직 자세한 리뷰는 많지 않습니다."
+
+    restrooms = context.get("restrooms") or []
+    if restrooms:
+        best = restrooms[0]
+        rating_text = "리뷰 없음" if best["rating"] is None else f"평점 {best['rating']}"
+        return f"{context.get('center', {}).get('label', '검색 위치')} 기준으로는 {best['name']}가 좋아 보여요. {best['distanceMeters']}m 거리이고 {rating_text}입니다."
+
+    return "조건에 맞는 화장실을 찾지 못했어요. 위치나 반경을 조금 넓혀보세요."
+
+
+def _chat_place_info(db: Session, message: str) -> dict[str, Any] | None:
+    keyword = _extract_place_keyword(db, message)
+    if not keyword:
+        return None
+
+    for poi in _load_poi_index():
+        title = poi["title"]
+        if keyword == title or keyword in title or title in keyword:
+            return {
+                "title": title,
+                "address": poi.get("address", ""),
+                "category": poi.get("category", "장소"),
+                "latitude": poi.get("latitude"),
+                "longitude": poi.get("longitude"),
+            }
+
+    if keyword in KEYWORD_CENTERS:
+        lat, lon = KEYWORD_CENTERS[keyword]
+        return {"title": keyword, "address": "", "category": "장소", "latitude": lat, "longitude": lon}
+    if keyword in DISTRICT_CENTERS:
+        lat, lon = DISTRICT_CENTERS[keyword]
+        return {"title": keyword, "address": "", "category": "서울 자치구", "latitude": lat, "longitude": lon}
+    return None
+
+
+def _openai_content_from_response(data: dict[str, Any]) -> str:
+    message = (data.get("choices") or [{}])[0].get("message") or {}
+    content = message.get("content", "")
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        parts = []
+        for item in content:
+            if isinstance(item, dict):
+                parts.append(str(item.get("text") or item.get("content") or ""))
+            else:
+                parts.append(str(item))
+        return " ".join(part for part in parts if part)
+    return str(content or "")
+
+
+async def _call_openai_chat(openai_key: str, openai_model: str, messages: list[dict[str, str]]) -> str:
+    base_payload = {"model": openai_model, "messages": messages}
+    payloads = [
+        {**base_payload, "max_completion_tokens": 220},
+        {**base_payload, "max_tokens": 220, "temperature": 0.4},
+        base_payload,
+    ]
+    last_error: Exception | None = None
+
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        for body in payloads:
+            try:
+                response = await client.post(
+                    "https://api.openai.com/v1/chat/completions",
+                    headers={"Authorization": f"Bearer {openai_key}"},
+                    json=body,
+                )
+                response.raise_for_status()
+                return _openai_content_from_response(response.json())
+            except httpx.HTTPStatusError as exc:
+                last_error = exc
+                if exc.response.status_code not in {400, 422}:
+                    break
+            except Exception as exc:
+                last_error = exc
+                break
+
+    if last_error:
+        raise last_error
+    return ""
+
+
+def _rating_text(rating: Any) -> str:
+    return "리뷰 없음" if rating is None else f"평점 {rating}"
+
+
+def _format_review_snippets(restroom: dict[str, Any], limit: int = 2) -> str:
+    snippets = restroom.get("reviewSnippets") or []
+    if not snippets:
+        return f"{restroom['name']}: 아직 등록된 리뷰가 없습니다."
+
+    parts = []
+    for snippet in snippets[:limit]:
+        rating = snippet.get("rating")
+        rating_label = "" if rating is None else f"평점 {rating}, "
+        parts.append(f"{restroom['name']}: {rating_label}{snippet.get('content')}")
+    return " / ".join(parts)
+
+
+def _direct_service_chat_answer(context: dict[str, Any]) -> str | None:
+    intent = context.get("intent")
+    if intent == "greeting":
+        return None
+    if intent == "general":
+        if context.get("placeInfo"):
+            return _fallback_chat_answer(context)
+        return None
+    if context.get("needsPlace"):
+        return _fallback_chat_answer(context)
+
+    focused = context.get("focusedRestroom")
+    if focused and intent in {"review", "community"}:
+        return _format_review_snippets(focused, limit=3)
+
+    restrooms = context.get("restrooms") or []
+    center_label = (context.get("center") or {}).get("label") or "검색 위치"
+    requested_limit = int(context.get("requestedLimit") or 3)
+
+    if intent in {"review", "community"}:
+        if not restrooms:
+            return f"{center_label} 주변에서 확인할 리뷰를 찾지 못했어요."
+
+        with_reviews = [item for item in restrooms if item.get("reviewSnippets")]
+        targets = with_reviews[: min(2, requested_limit)] or restrooms[: min(2, requested_limit)]
+        review_text = " / ".join(_format_review_snippets(item, limit=1) for item in targets)
+        return f"{center_label} 주변 리뷰를 바로 보면, {review_text}"
+
+    if intent == "restroom_search":
+        if not restrooms:
+            conditions = context.get("conditions") or {}
+            if conditions.get("needs_review"):
+                return f"{center_label} 주변에서 리뷰가 등록된 화장실을 찾지 못했어요."
+            return f"{center_label} 주변에서 조건에 맞는 화장실을 찾지 못했어요."
+
+        count = len(restrooms)
+        sort_label = "평점순" if context.get("sortBy") == "rating" else "거리순"
+        if count < requested_limit:
+            return f"{center_label} 기준 {sort_label}으로 현재 조건에서 {count}곳 찾았어요."
+        return f"{center_label} 기준 {sort_label}으로 {count}곳 찾았어요."
+
+    return None
 
 
 def _load_poi_index() -> list[dict[str, Any]]:
@@ -834,114 +1542,64 @@ async def delete_post(post_id: int, request: Request, db: Session = Depends(get_
 
 @router.post("/chat")
 async def chat(payload: dict[str, Any], db: Session = Depends(get_db)):
-    # 메시지, 히스토리, 선택적으로 프론트 좌표를 사용
-    message = str(payload.get("message") or "")
+    message = str(payload.get("message") or "").strip()
+    if not message:
+        return {"answer": "무엇을 도와드릴까요?", "locations": [], "warnings": []}
+
     history = payload.get("history") or [{"role": "user", "content": message}]
     user_lat = payload.get("latitude")
     user_lon = payload.get("longitude")
+    context, locations = _build_chat_context(db, message, history, user_lat, user_lon)
 
-    # system prompt로 역할 명시
-    system_message = {
-        "role": "system",
-        "content": "너는 우리 서비스의 화장실 안내 봇이야. 화장실 검색 결과가 주어지면, 그 데이터를 바탕으로 사용자에게 친절하고 자연스러운 문장으로 안내해줘."
-    }
-    messages_for_openai = [system_message] + history
+    if context.get("intent") == "greeting" or context.get("needsPlace"):
+        return {"answer": _fallback_chat_answer(context), "locations": locations, "warnings": []}
+
+    direct_answer = _direct_service_chat_answer(context)
+    if direct_answer:
+        return {"answer": direct_answer, "locations": locations, "warnings": []}
 
     openai_key = os.getenv("OPENAI_API_KEY")
     openai_model = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
 
     if openai_key:
         try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                resp = await client.post(
-                    "https://api.openai.com/v1/chat/completions",
-                    headers={"Authorization": f"Bearer {openai_key}"},
-                    json={
-                        "model": openai_model,
-                        "messages": messages_for_openai,
-                        "functions": FUNCTIONS,
-                        "function_call": "auto",
-                    },
-                )
-                resp.raise_for_status()
-                data = resp.json()
+            clean_history: list[dict[str, str]] = []
+            if isinstance(history, list):
+                for item in history[-8:]:
+                    if not isinstance(item, dict):
+                        continue
+                    role = item.get("role")
+                    content = _compact_text(item.get("content"), 500)
+                    if role in {"user", "assistant"} and content:
+                        clean_history.append({"role": role, "content": content})
+            if not clean_history or clean_history[-1]["content"] != message:
+                clean_history.append({"role": "user", "content": message})
 
-            msg = data["choices"][0]["message"]
+            system_message = {
+                "role": "system",
+                "content": (
+                    "너는 '화장실록'의 AI 챗봇이다. 한국어로 자연스럽게 답한다. "
+                    "기본 답변은 1~3문장, 최대 300자 안에서 끝낸다. "
+                    "인사와 간단한 잡담은 한 문장으로 답한다. "
+                    "화장실 추천/리뷰 질문은 반드시 제공된 서비스 DB 컨텍스트만 근거로 답하고, "
+                    "없는 정보는 추측하지 않는다. 장소가 부족하면 짧게 되묻는다."
+                ),
+            }
+            context_message = {
+                "role": "system",
+                "content": "서비스 DB 컨텍스트(JSON): "
+                + json.dumps(context, ensure_ascii=False, default=str),
+            }
 
-            # 모델이 함수 호출을 요청하면 DB 조회 실행 후 모델에 결과를 전달하여 최종 응답을 얻음
-            if msg.get("function_call"):
-                fname = msg["function_call"]["name"]
-                fargs_raw = msg["function_call"].get("arguments") or "{}"
-                fargs = json.loads(fargs_raw)
+            assistant_text = await _call_openai_chat(
+                openai_key,
+                openai_model,
+                [system_message, context_message] + clean_history,
+            )
+            if assistant_text:
+                return {"answer": _trim_chat_answer(assistant_text), "locations": locations, "warnings": []}
+        except Exception as exc:
+            warnings = [f"일반 대화 AI 연결 실패: {type(exc).__name__}"]
+            return {"answer": _fallback_chat_answer(context), "locations": locations, "warnings": warnings}
 
-                if fname == "get_nearby_toilets":
-                    lat = user_lat if user_lat else fargs.get("latitude")
-                    lon = user_lon if user_lon else fargs.get("longitude")
-                    result_data = _execute_get_nearby_toilets(
-                        db=db,
-                        latitude=lat,
-                        longitude=lon,
-                        radius=fargs.get("radius", 1000),
-                        sort_by=fargs.get("sort_by", "distance"),
-                        needs_diaper_table=fargs.get("needs_diaper_table", False),
-                        needs_handicap=fargs.get("needs_handicap", False),
-                        needs_emergency_bell=fargs.get("needs_emergency_bell", False),
-                    )
-                else:
-                    result_data = []
-
-                messages_for_openai.append(msg)
-                messages_for_openai.append(
-                    {"role": "function", "name": fname, "content": json.dumps(result_data, ensure_ascii=False)}
-                )
-
-                async with httpx.AsyncClient(timeout=30.0) as client:
-                    resp2 = await client.post(
-                        "https://api.openai.com/v1/chat/completions",
-                        headers={"Authorization": f"Bearer {openai_key}"},
-                        json={"model": openai_model, "messages": messages_for_openai},
-                    )
-                    resp2.raise_for_status()
-                    final_data = resp2.json()
-
-                final_answer = final_data["choices"][0]["message"].get("content", "")
-                return {"answer": final_answer, "locations": result_data, "warnings": []}
-
-            # 함수 호출이 필요 없으면 assistant content 반환
-            assistant_text = msg.get("content", "")
-            return {"answer": assistant_text, "locations": [], "warnings": []}
-        except Exception:
-            # OpenAI 관련 에러 시 기존 룰 기반 폴백으로 진행
-            pass
-
-    # --- 기존 룰 기반 폴백 ---
-    radius = 1000
-    if "2km" in message or "2킬로" in message:
-        radius = 2000
-    elif "500" in message:
-        radius = 500
-    elif "200" in message:
-        radius = 200
-
-    center_lat, center_lon = _resolve_center(db, message)
-    toilets = db.query(Toilet).filter(Toilet.latitude != 0, Toilet.longitude != 0).all()
-    matches = []
-    for toilet in toilets:
-        if "기저귀" in message and not toilet.diaper_changing_table:
-            continue
-        if "장애" in message and not toilet.handicap_facility:
-            continue
-        if "비상벨" in message and not toilet.emergency_bell:
-            continue
-        distance = _distance_meters(center_lat, center_lon, toilet.latitude, toilet.longitude)
-        if distance <= radius:
-            matches.append(_normalize_restroom(db, toilet, distance))
-
-    matches.sort(key=lambda item: ((item.get("rating") or 0) * -1, item["distanceMeters"]))
-    locations = matches[:3]
-    if locations:
-        answer = f"조건에 가까운 화장실 {len(locations)}곳을 찾았습니다. 거리와 시설 조건을 함께 확인해보세요."
-    else:
-        answer = "조건에 맞는 화장실을 찾지 못했습니다. 검색 반경이나 조건을 조금 넓혀보세요."
-
-    return {"answer": answer, "locations": locations, "warnings": []}
+    return {"answer": _fallback_chat_answer(context), "locations": locations, "warnings": []}

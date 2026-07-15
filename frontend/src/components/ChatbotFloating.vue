@@ -72,6 +72,9 @@ onBeforeUnmount(() => window.removeEventListener('open-ai-chat', openFromEvent))
           <article v-for="location in message.locations" :key="location.id">
             <strong>{{ location.name }}</strong>
             <span>{{ location.rating == null ? '리뷰 없음' : `★ ${location.rating}` }} · {{ location.distanceMeters }}m</span>
+            <em v-if="location.reviewSnippets?.length">
+              {{ location.reviewSnippets[0].content }}
+            </em>
           </article>
         </div>
         <small v-for="warning in message.warnings" :key="warning">{{ warning }}</small>
