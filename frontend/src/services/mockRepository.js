@@ -133,6 +133,104 @@ export async function deleteMockPost(id, password) {
   return { success: true }
 }
 
+
+function syncCommentSummary(post) {
+  const comments = Array.isArray(post.comments) ? post.comments : []
+  post.commentCount = comments.length
+  post.commentPreview = comments.slice(0, 2).map((comment) => {
+    const { password, ...preview } = comment
+    return preview
+  })
+}
+
+function findPostIndex(posts, postId) {
+  const index = posts.findIndex((item) => item.id === Number(postId))
+  if (index < 0) throw new Error('게시글을 찾을 수 없습니다.')
+  return index
+}
+
+function findComment(post, commentId) {
+  const comments = Array.isArray(post.comments) ? post.comments : []
+  const index = comments.findIndex((item) => item.id === Number(commentId))
+  if (index < 0) throw new Error('댓글을 찾을 수 없습니다.')
+  return { comments, index, comment: comments[index] }
+}
+
+export async function createMockComment(postId, payload) {
+  await wait()
+  const nickname = String(payload.nickname || '').trim()
+  const password = String(payload.password || '')
+  const content = String(payload.content || '').trim()
+
+  if (!nickname) throw new Error('닉네임을 입력해 주세요.')
+  if (password.length < 4) throw new Error('비밀번호를 4자 이상 입력해 주세요.')
+  if (!content) throw new Error('댓글 내용을 입력해 주세요.')
+
+  const posts = readPosts()
+  const postIndex = findPostIndex(posts, postId)
+  const allCommentIds = posts.flatMap((post) =>
+    Array.isArray(post.comments) ? post.comments.map((comment) => Number(comment.id) || 0) : [],
+  )
+  const id = allCommentIds.length ? Math.max(...allCommentIds) + 1 : 1
+  const comment = {
+    id,
+    nickname,
+    password,
+    content,
+    createdAt: new Date().toISOString(),
+  }
+
+  const comments = Array.isArray(posts[postIndex].comments)
+    ? posts[postIndex].comments
+    : []
+  posts[postIndex].comments = [comment, ...comments]
+  syncCommentSummary(posts[postIndex])
+  savePosts(posts)
+
+  const { password: _, ...publicComment } = comment
+  return clone(publicComment)
+}
+
+export async function updateMockComment(postId, commentId, payload) {
+  await wait()
+  const content = String(payload.content || '').trim()
+  const password = String(payload.password || '')
+  if (!content) throw new Error('댓글 내용을 입력해 주세요.')
+
+  const posts = readPosts()
+  const postIndex = findPostIndex(posts, postId)
+  const { comments, index, comment } = findComment(posts[postIndex], commentId)
+  const storedPassword = comment.password || '1234'
+  if (storedPassword !== password) throw new Error('비밀번호가 일치하지 않습니다.')
+
+  comments[index] = {
+    ...comment,
+    content,
+    updatedAt: new Date().toISOString(),
+  }
+  posts[postIndex].comments = comments
+  syncCommentSummary(posts[postIndex])
+  savePosts(posts)
+
+  const { password: _, ...publicComment } = comments[index]
+  return clone(publicComment)
+}
+
+export async function deleteMockComment(postId, commentId, password) {
+  await wait()
+  const posts = readPosts()
+  const postIndex = findPostIndex(posts, postId)
+  const { comments, index, comment } = findComment(posts[postIndex], commentId)
+  const storedPassword = comment.password || '1234'
+  if (storedPassword !== password) throw new Error('비밀번호가 일치하지 않습니다.')
+
+  comments.splice(index, 1)
+  posts[postIndex].comments = comments
+  syncCommentSummary(posts[postIndex])
+  savePosts(posts)
+  return { success: true }
+}
+
 export async function searchMockRestrooms({
   keyword = '',
   radius = 1000,

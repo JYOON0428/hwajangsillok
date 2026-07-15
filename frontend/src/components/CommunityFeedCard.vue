@@ -19,6 +19,36 @@ const commentsRoute = computed(() => ({
   hash: '#comments',
 }))
 
+const isFreeBoard = computed(() => props.post.category === '자유게시판')
+
+const showTypeBadge = computed(() => {
+  const type = String(props.post.postType || '').trim()
+  if (!type) return false
+  if (type === props.post.category) return false
+  if (type === '화장실 리뷰') return false
+  return true
+})
+
+const showRating = computed(
+  () => !isFreeBoard.value && props.post.rating != null,
+)
+
+const hasContext = computed(
+  () => !isFreeBoard.value && Boolean(
+    props.post.relatedPlace || props.post.restroomName || showRating.value,
+  ),
+)
+
+const primaryContext = computed(
+  () => props.post.restroomName || props.post.relatedPlace || '',
+)
+
+const secondaryContext = computed(() => {
+  if (!props.post.restroomName || !props.post.relatedPlace) return ''
+  if (props.post.restroomName === props.post.relatedPlace) return ''
+  return props.post.relatedPlace
+})
+
 const ratingClass = computed(() => {
   if (props.post.rating == null) return 'rating-none'
   if (props.post.rating >= 4) return 'rating-high'
@@ -48,10 +78,6 @@ const timeLabel = computed(() => {
   }).format(createdAt)
 })
 
-const locationLabel = computed(
-  () => props.post.restroomName || props.post.relatedPlace || '',
-)
-
 const images = computed(() => {
   if (Array.isArray(props.post.imageUrls) && props.post.imageUrls.length) {
     return props.post.imageUrls.filter(Boolean)
@@ -74,7 +100,7 @@ const commentPreview = computed(() => {
     <header class="community-post-card__header">
       <div class="community-post-card__badges">
         <span class="category">{{ post.category }}</span>
-        <span class="type">{{ post.postType || '게시글' }}</span>
+        <span v-if="showTypeBadge" class="type">{{ post.postType }}</span>
       </div>
 
       <div class="community-post-card__meta">
@@ -84,14 +110,31 @@ const commentPreview = computed(() => {
       </div>
     </header>
 
-    <div class="community-post-card__title-row">
-      <RouterLink :to="detailRoute" class="community-post-card__title-link">
-        <h2>{{ post.title }}</h2>
+    <RouterLink :to="detailRoute" class="community-post-card__title-link">
+      <h2>{{ post.title }}</h2>
+    </RouterLink>
+
+    <div v-if="hasContext" class="community-post-card__context">
+      <RouterLink
+        v-if="primaryContext"
+        class="community-post-card__context-place"
+        :to="detailRoute"
+      >
+        <span class="community-post-card__context-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M12 21s7-6.1 7-12a7 7 0 1 0-14 0c0 5.9 7 12 7 12Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
+            <circle cx="12" cy="9" r="2.4" stroke="currentColor" stroke-width="1.8" />
+          </svg>
+        </span>
+        <span class="community-post-card__context-copy">
+          <strong>{{ primaryContext }}</strong>
+          <small v-if="secondaryContext">{{ secondaryContext }}</small>
+        </span>
       </RouterLink>
 
       <span
-        v-if="post.rating != null"
-        class="community-cleanliness-badge"
+        v-if="showRating"
+        class="community-cleanliness-badge community-cleanliness-badge--compact"
         :class="ratingClass"
       >
         <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -101,18 +144,6 @@ const commentPreview = computed(() => {
         <strong>{{ Number(post.rating).toFixed(1) }}</strong>
       </span>
     </div>
-
-    <RouterLink
-      v-if="locationLabel"
-      class="community-post-card__location"
-      :to="detailRoute"
-    >
-      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="M12 21s7-6.1 7-12a7 7 0 1 0-14 0c0 5.9 7 12 7 12Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
-        <circle cx="12" cy="9" r="2.4" stroke="currentColor" stroke-width="1.8" />
-      </svg>
-      <span>{{ locationLabel }}</span>
-    </RouterLink>
 
     <RouterLink class="community-post-card__content-link" :to="detailRoute">
       <p>{{ post.content }}</p>
