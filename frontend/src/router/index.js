@@ -2,6 +2,7 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 import HomeView from '../views/HomeView.vue'
 import SearchResultView from '../views/SearchResultView.vue'
 import CommunityListView from '../views/CommunityListView.vue'
+import RestroomReviewListView from '../views/RestroomReviewListView.vue'
 import PostDetailView from '../views/PostDetailView.vue'
 import PostFormView from '../views/PostFormView.vue'
 import NotFoundView from '../views/NotFoundView.vue'
@@ -11,13 +12,16 @@ const router = createRouter({
   routes: [
     { path: '/', name: 'home', component: HomeView },
     { path: '/search', name: 'search', component: SearchResultView },
+    { path: '/restrooms/:id/reviews', name: 'restroom-reviews', component: RestroomReviewListView, props: true },
     { path: '/community', name: 'community', component: CommunityListView },
     { path: '/community/new', name: 'post-create', component: PostFormView },
     { path: '/community/:id', name: 'post-detail', component: PostDetailView, props: true },
     { path: '/community/:id/edit', name: 'post-edit', component: PostFormView, props: true },
     { path: '/:pathMatch(.*)*', name: 'not-found', component: NotFoundView },
   ],
-  scrollBehavior() {
+  scrollBehavior(to, from, savedPosition) {
+    if (savedPosition) return savedPosition
+    if (to.hash) return { el: to.hash, top: 88, behavior: 'smooth' }
     return { top: 0 }
   },
 })

@@ -20,6 +20,7 @@ const currentIndex = ref(0)
 const validImages = computed(() => props.images.filter(Boolean))
 const currentImage = computed(() => validImages.value[currentIndex.value] || '')
 const hasMultiple = computed(() => validImages.value.length > 1)
+const touchStartX = ref(null)
 
 watch(
   validImages,
@@ -47,6 +48,21 @@ function handleKeydown(event) {
   if (event.key === 'ArrowLeft') previous()
   if (event.key === 'ArrowRight') next()
 }
+
+function handleTouchStart(event) {
+  touchStartX.value = event.changedTouches?.[0]?.clientX ?? null
+}
+
+function handleTouchEnd(event) {
+  if (touchStartX.value == null) return
+  const endX = event.changedTouches?.[0]?.clientX
+  if (endX == null) return
+  const distance = endX - touchStartX.value
+  touchStartX.value = null
+  if (Math.abs(distance) < 45) return
+  if (distance > 0) previous()
+  else next()
+}
 </script>
 
 <template>
@@ -58,6 +74,8 @@ function handleKeydown(event) {
     role="region"
     aria-label="게시글 첨부 이미지"
     @keydown="handleKeydown"
+    @touchstart.passive="handleTouchStart"
+    @touchend.passive="handleTouchEnd"
   >
     <div class="post-image-carousel__stage">
       <img

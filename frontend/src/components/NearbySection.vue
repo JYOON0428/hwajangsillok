@@ -1,8 +1,11 @@
 <script setup>
 import { onMounted, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { searchRestrooms } from '../services/locationApi'
 import RestroomMapPanel from './RestroomMapPanel.vue'
 import NearbyRestroomCard from './NearbyRestroomCard.vue'
+
+const router = useRouter()
 
 const FIXED_NEARBY_LOCATION = {
   label: '역삼역 멀티캠퍼스',
@@ -51,6 +54,18 @@ async function load() {
 function changeRadius(option) {
   if (radius.value === option) return
   radius.value = option
+}
+
+function openRestroomInSearch(restroomId) {
+  router.push({
+    name: 'search',
+    query: {
+      q: FIXED_NEARBY_LOCATION.keyword,
+      radius: radius.value,
+      source: 'nearby-map',
+      restroomId,
+    },
+  })
 }
 
 watch(radius, load)
@@ -119,6 +134,7 @@ onMounted(load)
             :restrooms="restrooms"
             :anchor-location="FIXED_NEARBY_LOCATION"
             :show-research-button="false"
+            @select="openRestroomInSearch"
           />
 
           <div class="nearby-list">

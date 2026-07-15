@@ -1,6 +1,6 @@
 import { initialPosts, restrooms, restroomReviews } from '../data/mockData'
 
-const POST_KEY = 'hwajangsillok.posts.reddit-v1'
+const POST_KEY = 'hwajangsillok.posts.community-v2'
 
 function clone(value) {
   return typeof structuredClone === 'function'
@@ -30,7 +30,7 @@ export async function listMockPosts({
   keyword = '',
   sort = 'recent',
   page = 1,
-  size = 9,
+  size = 10,
 } = {}) {
   await wait()
   let items = readPosts()
@@ -63,12 +63,10 @@ export async function listMockPosts({
       (b.recommendationCount || 0) - (a.recommendationCount || 0)
       || (b.commentCount || 0) - (a.commentCount || 0)
       || new Date(b.createdAt) - new Date(a.createdAt),
-    rating: (a, b) => {
-      if (a.rating == null && b.rating == null) return new Date(b.createdAt) - new Date(a.createdAt)
-      if (a.rating == null) return 1
-      if (b.rating == null) return -1
-      return b.rating - a.rating || new Date(b.createdAt) - new Date(a.createdAt)
-    },
+    comments: (a, b) =>
+      (b.commentCount || 0) - (a.commentCount || 0)
+      || (b.recommendationCount || 0) - (a.recommendationCount || 0)
+      || new Date(b.createdAt) - new Date(a.createdAt),
   }
 
   items = items.slice().sort(sorters[sort] || sorters.recent)
@@ -96,7 +94,10 @@ export async function createMockPost(payload) {
   const post = {
     id,
     recommendationCount: 0,
+    dislikeCount: 0,
     commentCount: 0,
+    commentPreview: [],
+    comments: [],
     createdAt: new Date().toISOString(),
     imageUrl: '',
     imageUrls: [],
@@ -129,6 +130,104 @@ export async function deleteMockPost(id, password) {
   if (!post) throw new Error('게시글을 찾을 수 없습니다.')
   if (post.password !== password) throw new Error('비밀번호가 일치하지 않습니다.')
   savePosts(posts.filter((item) => item.id !== Number(id)))
+  return { success: true }
+}
+
+
+function syncCommentSummary(post) {
+  const comments = Array.isArray(post.comments) ? post.comments : []
+  post.commentCount = comments.length
+  post.commentPreview = comments.slice(0, 2).map((comment) => {
+    const { password, ...preview } = comment
+    return preview
+  })
+}
+
+function findPostIndex(posts, postId) {
+  const index = posts.findIndex((item) => item.id === Number(postId))
+  if (index < 0) throw new Error('게시글을 찾을 수 없습니다.')
+  return index
+}
+
+function findComment(post, commentId) {
+  const comments = Array.isArray(post.comments) ? post.comments : []
+  const index = comments.findIndex((item) => item.id === Number(commentId))
+  if (index < 0) throw new Error('댓글을 찾을 수 없습니다.')
+  return { comments, index, comment: comments[index] }
+}
+
+export async function createMockComment(postId, payload) {
+  await wait()
+  const nickname = String(payload.nickname || '').trim()
+  const password = String(payload.password || '')
+  const content = String(payload.content || '').trim()
+
+  if (!nickname) throw new Error('닉네임을 입력해 주세요.')
+  if (password.length < 4) throw new Error('비밀번호를 4자 이상 입력해 주세요.')
+  if (!content) throw new Error('댓글 내용을 입력해 주세요.')
+
+  const posts = readPosts()
+  const postIndex = findPostIndex(posts, postId)
+  const allCommentIds = posts.flatMap((post) =>
+    Array.isArray(post.comments) ? post.comments.map((comment) => Number(comment.id) || 0) : [],
+  )
+  const id = allCommentIds.length ? Math.max(...allCommentIds) + 1 : 1
+  const comment = {
+    id,
+    nickname,
+    password,
+    content,
+    createdAt: new Date().toISOString(),
+  }
+
+  const comments = Array.isArray(posts[postIndex].comments)
+    ? posts[postIndex].comments
+    : []
+  posts[postIndex].comments = [comment, ...comments]
+  syncCommentSummary(posts[postIndex])
+  savePosts(posts)
+
+  const { password: _, ...publicComment } = comment
+  return clone(publicComment)
+}
+
+export async function updateMockComment(postId, commentId, payload) {
+  await wait()
+  const content = String(payload.content || '').trim()
+  const password = String(payload.password || '')
+  if (!content) throw new Error('댓글 내용을 입력해 주세요.')
+
+  const posts = readPosts()
+  const postIndex = findPostIndex(posts, postId)
+  const { comments, index, comment } = findComment(posts[postIndex], commentId)
+  const storedPassword = comment.password || '1234'
+  if (storedPassword !== password) throw new Error('비밀번호가 일치하지 않습니다.')
+
+  comments[index] = {
+    ...comment,
+    content,
+    updatedAt: new Date().toISOString(),
+  }
+  posts[postIndex].comments = comments
+  syncCommentSummary(posts[postIndex])
+  savePosts(posts)
+
+  const { password: _, ...publicComment } = comments[index]
+  return clone(publicComment)
+}
+
+export async function deleteMockComment(postId, commentId, password) {
+  await wait()
+  const posts = readPosts()
+  const postIndex = findPostIndex(posts, postId)
+  const { comments, index, comment } = findComment(posts[postIndex], commentId)
+  const storedPassword = comment.password || '1234'
+  if (storedPassword !== password) throw new Error('비밀번호가 일치하지 않습니다.')
+
+  comments.splice(index, 1)
+  posts[postIndex].comments = comments
+  syncCommentSummary(posts[postIndex])
+  savePosts(posts)
   return { success: true }
 }
 
@@ -174,11 +273,47 @@ export async function getMockRestroom(restroomId) {
 
 export async function getMockRestroomReviews(restroomId, { sort = 'recent' } = {}) {
   await wait()
-  const items = clone(restroomReviews[Number(restroomId)] || [])
+
+  const resolvedRestroomId = Number(restroomId)
+  const linkedPosts = readPosts()
+    .filter((post) => Number(post.restroomId) === resolvedRestroomId)
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+
+  const items = clone(restroomReviews[resolvedRestroomId] || []).map((review, index) => {
+    const exactPost = linkedPosts.find((post) => post.title === review.title)
+    const linkedPost = exactPost || linkedPosts[index] || linkedPosts[0]
+
+    return {
+      ...review,
+      postId: linkedPost?.id ?? review.postId ?? null,
+    }
+  })
+
+  const existingTitles = new Set(items.map((review) => review.title))
+  linkedPosts.forEach((post) => {
+    if (existingTitles.has(post.title)) return
+
+    items.push({
+      id: `post-${post.id}`,
+      postId: post.id,
+      title: post.title,
+      cleanliness: post.rating,
+      content: post.content,
+      imageUrls: Array.isArray(post.imageUrls)
+        ? post.imageUrls
+        : post.imageUrl
+          ? [post.imageUrl]
+          : [],
+      commentCount: post.commentCount || 0,
+      createdAt: post.createdAt,
+      createdAtLabel: post.createdAtLabel || '',
+    })
+  })
+
   const sorters = {
     recent: (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
-    cleanlinessHigh: (a, b) => b.cleanliness - a.cleanliness,
-    cleanlinessLow: (a, b) => a.cleanliness - b.cleanliness,
+    cleanlinessHigh: (a, b) => (b.cleanliness ?? -1) - (a.cleanliness ?? -1),
+    cleanlinessLow: (a, b) => (a.cleanliness ?? 999) - (b.cleanliness ?? 999),
     comments: (a, b) => b.commentCount - a.commentCount,
   }
   return items.sort(sorters[sort] || sorters.recent)

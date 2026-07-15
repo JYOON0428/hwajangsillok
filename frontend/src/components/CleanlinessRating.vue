@@ -57,7 +57,7 @@ function fillWidth(star) {
         <span class="rating-star-empty">★</span>
         <span class="rating-star-fill" :style="{ width: fillWidth(star) }">★</span>
       </button>
-      <strong>{{ displayValue ? displayValue.toFixed(1) : '0.0' }}</strong>
+      <strong>{{ displayValue ? displayValue.toFixed(1) : '미선택' }}</strong>
     </div>
     <span class="rating-label">{{ label }}</span>
   </div>
