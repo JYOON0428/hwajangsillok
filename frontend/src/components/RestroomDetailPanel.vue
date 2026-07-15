@@ -1,3 +1,4 @@
+
 <script setup>
 import { computed } from 'vue'
 import RestroomReviewCard from './RestroomReviewCard.vue'
@@ -171,7 +172,6 @@ function operationStatus(restroom) {
         <div v-else-if="!reviews.length" class="empty-review-state empty-review-state--compact">
           <strong>아직 등록된 리뷰가 없습니다.</strong>
           <p>첫 이용 경험을 남겨 다른 방문자에게 도움을 주세요.</p>
-          <button type="button" class="primary-button" @click="emit('write-review')">리뷰 쓰기</button>
         </div>
         <div v-else class="review-card-list review-card-list--recent">
           <RestroomReviewCard

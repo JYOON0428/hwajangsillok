@@ -368,7 +368,7 @@ onBeforeUnmount(revokePreviews)
         </button>
 
         <div>
-          <span>{{ isEdit ? '작성한 리뷰를 수정합니다' : '이용 경험을 다른 사용자와 공유해 주세요' }}</span>
+          <span v-if="isEdit">작성한 리뷰를 수정합니다</span>
           <h1>{{ editorTitle }}</h1>
         </div>
       </header>
@@ -385,22 +385,27 @@ onBeforeUnmount(revokePreviews)
           </div>
 
           <div class="editor-author-grid">
-            <div class="editor-author-identity" aria-label="자동 생성 작성자 닉네임">
-              <span class="editor-author-avatar" aria-hidden="true">{{ authorNickname.slice(0, 1) }}</span>
-              <div>
-                <small>작성자</small>
-                <strong>{{ authorNickname }}</strong>
-                <p>자동 생성 닉네임</p>
+            <div class="editor-author-card editor-author-identity" aria-label="자동 생성 작성자 닉네임">
+              <div class="editor-author-card__label">작성자</div>
+              <div class="editor-author-card__content">
+                <span class="editor-author-avatar" aria-hidden="true">{{ authorNickname.slice(0, 1) }}</span>
+                <div class="editor-author-copy">
+                  <strong>{{ authorNickname }}</strong>
+                  <small>자동 생성 닉네임</small>
+                </div>
               </div>
             </div>
 
             <label
               v-if="!isEdit"
-              class="editor-password-field"
+              class="editor-author-card editor-password-field"
               :class="{ 'has-field-error': fieldErrors.password }"
               data-field="password"
             >
-              <span>수정·삭제 비밀번호 <em class="required-mark">필수</em></span>
+              <span class="editor-author-card__label">
+                수정·삭제 비밀번호
+                <em class="required-mark">필수</em>
+              </span>
               <input
                 v-model="form.password"
                 type="password"
@@ -408,14 +413,15 @@ onBeforeUnmount(revokePreviews)
                 placeholder="4자 이상 입력하세요"
                 autocomplete="new-password"
               />
-              <small>게시글 수정·삭제 시 다시 입력합니다.</small>
               <b v-if="fieldErrors.password" class="field-error">{{ fieldErrors.password }}</b>
             </label>
 
-            <div v-else class="editor-password-verified">
-              <span>수정 비밀번호</span>
-              <strong>확인 완료</strong>
-              <small>상세 화면에서 확인한 비밀번호가 적용됩니다.</small>
+            <div v-else class="editor-author-card editor-password-verified">
+              <span class="editor-author-card__label">수정 비밀번호</span>
+              <div class="editor-password-verified__content">
+                <strong>확인 완료</strong>
+                <small>상세 화면에서 확인한 비밀번호가 적용됩니다.</small>
+              </div>
             </div>
           </div>
         </section>
@@ -424,7 +430,6 @@ onBeforeUnmount(revokePreviews)
           <div class="editor-section-heading">
             <div>
               <h2>리뷰 설정</h2>
-              <p>게시할 카테고리와 실제 이용한 화장실을 선택합니다.</p>
             </div>
           </div>
 

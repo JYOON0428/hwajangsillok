@@ -11664,22 +11664,41 @@ body {
 
 .editor-author-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(300px, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
   align-items: stretch;
 }
 
-.editor-author-identity,
-.editor-password-verified {
+.editor-author-card {
   min-width: 0;
-  min-height: 88px;
+  min-height: 112px;
   display: flex;
-  align-items: center;
-  gap: 13px;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 9px;
   padding: 15px 16px;
-  border: 1px solid #e0eaf0;
+  border: 1px solid #dfeaf0;
   border-radius: 14px;
   background: #f8fcfe;
+}
+
+.editor-author-card__label {
+  min-height: 20px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: #2c4654;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.editor-author-card__content {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .editor-author-avatar {
@@ -11688,7 +11707,7 @@ body {
   flex: 0 0 42px;
   display: grid;
   place-items: center;
-  padding-top: 1px;
+  padding: 0;
   border-radius: 50%;
   background: #e6f6fd;
   color: #087dac;
@@ -11697,68 +11716,38 @@ body {
   line-height: 1;
 }
 
-.editor-author-identity > div,
-.editor-password-verified {
+.editor-author-copy {
   min-width: 0;
+  display: grid;
+  gap: 3px;
 }
 
-.editor-author-identity small,
-.editor-password-verified > span {
-  display: block;
-  color: #82959f;
-  font-size: 10px;
-  font-weight: 700;
-}
-
-.editor-author-identity strong,
-.editor-password-verified strong {
-  display: block;
-  margin-top: 3px;
+.editor-author-copy strong {
   overflow: hidden;
   color: #274c5e;
   font-size: 14px;
   font-weight: 800;
+  line-height: 1.35;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.editor-author-identity p,
-.editor-password-verified small {
-  display: block;
-  margin: 3px 0 0;
+.editor-author-copy small,
+.editor-password-verified__content small {
   color: #94a3aa;
   font-size: 10px;
   line-height: 1.4;
 }
 
-.editor-password-verified {
-  display: block;
-}
-
-.editor-password-verified strong {
-  color: #1c9a68;
-}
-
 .editor-password-field {
-  min-width: 0;
-  padding: 0;
-}
-
-.editor-password-field > span {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 9px;
-  color: #2c4654;
-  font-size: 14px;
-  font-weight: 650;
+  cursor: text;
 }
 
 .editor-password-field input {
   width: 100%;
   height: 48px;
   padding: 0 14px;
-  border: 1px solid #dce7ec;
+  border: 1px solid #d7e5eb;
   border-radius: 12px;
   outline: 0;
   background: #fff;
@@ -11772,9 +11761,25 @@ body {
 
 .editor-password-field > small {
   display: block;
-  margin-top: 7px;
+  margin: -2px 0 0;
   color: #91a1aa;
   font-size: 10px;
+  line-height: 1.4;
+}
+
+.editor-password-verified__content {
+  min-height: 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  padding: 0 2px;
+}
+
+.editor-password-verified__content strong {
+  color: #1c9a68;
+  font-size: 14px;
+  font-weight: 800;
 }
 
 .category-field,
@@ -12111,9 +12116,8 @@ body {
     grid-template-columns: 1fr;
   }
 
-  .editor-author-identity,
-  .editor-password-verified {
-    min-height: 76px;
+  .editor-author-card {
+    min-height: 108px;
   }
 
   .editor-category-tabs {
@@ -12188,5 +12192,374 @@ body {
 
   .image-preview-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+
+/* =========================================================
+   Home visual balance + compact comment credentials — 2026-07-15
+   Approved home feedback only
+   ========================================================= */
+
+/* Home category: slightly denser navigation cards and calmer CTA */
+.category-section {
+  padding-top: 50px;
+  padding-bottom: 42px;
+}
+
+.category-section-header {
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.category-write-button {
+  min-height: 40px;
+  padding: 0 15px;
+  border-radius: 12px;
+  box-shadow: 0 5px 12px rgba(2, 132, 199, .14);
+}
+
+.category-write-button:hover {
+  box-shadow: 0 8px 18px rgba(2, 132, 199, .20);
+}
+
+.category-card {
+  min-height: 68px;
+  gap: 11px;
+  padding: 11px 15px;
+  border-color: #dce9ef;
+  border-radius: 14px;
+  box-shadow: none;
+}
+
+.category-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 7px 18px rgba(27, 84, 113, .07);
+}
+
+.category-card.active {
+  box-shadow: 0 7px 18px rgba(20, 143, 197, .10);
+}
+
+.category-card-icon {
+  width: 36px;
+  height: 36px;
+  flex-basis: 36px;
+  border-radius: 11px;
+}
+
+.category-card-icon svg {
+  width: 19px;
+  height: 19px;
+}
+
+.category-card strong {
+  font-size: 14px;
+  font-weight: 750;
+}
+
+/* Home nearby section: brighter surface and clearer control hierarchy */
+.nearby-section {
+  border-top-color: #e7f0f4;
+  background: #f7fcff;
+}
+
+.nearby-section .content-section {
+  padding-top: 52px;
+  padding-bottom: 58px;
+}
+
+.nearby-section .section-heading h2 {
+  font-size: 27px;
+  font-weight: 800;
+}
+
+.nearby-section .section-heading p {
+  color: #708792;
+  font-size: 13px;
+}
+
+.nearby-map-link {
+  min-height: 40px;
+  padding: 0 11px;
+  border-color: transparent;
+  border-radius: 11px;
+  background: transparent;
+  color: #176987;
+  box-shadow: none;
+}
+
+.nearby-map-link:hover {
+  border-color: #d4eaf3;
+  background: #edf9fe;
+  color: #087caf;
+  transform: none;
+}
+
+.radius-buttons {
+  padding: 3px;
+  border-color: #dbe8ee;
+  border-radius: 11px;
+  box-shadow: none;
+}
+
+.radius-buttons button {
+  min-height: 34px;
+  border-radius: 8px;
+  font-weight: 750;
+}
+
+.radius-buttons button.active {
+  background: #173f53;
+  box-shadow: none;
+}
+
+.nearby-layout {
+  gap: 18px;
+}
+
+.nearby-kakao-map.restroom-map-panel {
+  border-color: #dce9ef;
+  border-radius: 16px;
+  box-shadow: none;
+}
+
+.nearby-home-list {
+  gap: 11px;
+}
+
+.nearby-restroom-card {
+  min-height: 0;
+  padding: 17px 18px;
+  border-color: #dce9ef;
+  border-radius: 16px;
+  box-shadow: none;
+  transition: border-color .16s ease, background .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+
+.nearby-restroom-card:hover,
+.nearby-restroom-card:focus-visible {
+  border-color: #9fd8ef;
+  background: #fbfeff;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(27, 85, 115, .07);
+  outline: none;
+}
+
+.nearby-restroom-card.selected,
+.nearby-restroom-card:active {
+  border-color: #65c2e9;
+  background: #eaf8ff;
+  box-shadow: inset 3px 0 0 #0ea5e9;
+  transform: none;
+}
+
+.nearby-card-top {
+  align-items: center;
+}
+
+.nearby-restroom-card h3 {
+  color: #173746;
+  font-size: 16px;
+  font-weight: 750;
+  line-height: 1.4;
+}
+
+.nearby-distance {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: #eaf7fd;
+  color: #087caf;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.nearby-card-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px 11px;
+  margin-top: 10px;
+  color: #758995;
+  font-size: 11px;
+}
+
+.nearby-card-summary strong {
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.nearby-card-summary .open-status,
+.nearby-card-summary .closed-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.nearby-card-summary .open-status i,
+.nearby-card-summary .closed-status i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.nearby-review-count {
+  color: #93a1a8;
+  font-weight: 600;
+}
+
+.nearby-latest-review {
+  margin-top: 11px;
+  color: #536e7c;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.nearby-card-bottom {
+  justify-content: flex-end;
+  margin-top: 10px;
+  padding-top: 0;
+  border-top: 0;
+  color: #98a5ab;
+  font-size: 10px;
+}
+
+/* Home map controls: readable but visually secondary to the map */
+.nearby-kakao-map .map-secondary-controls {
+  top: 13px;
+  right: 13px;
+  gap: 8px;
+}
+
+.nearby-kakao-map .map-result-count {
+  min-height: 38px;
+  padding: 0 12px;
+  border-color: #d8e7ed;
+  border-radius: 11px;
+  background: rgba(255, 255, 255, .97);
+  color: #496b7a;
+  box-shadow: 0 5px 14px rgba(31, 99, 136, .10);
+  font-size: 11px;
+}
+
+.nearby-kakao-map .map-fullscreen-button {
+  width: 38px;
+  height: 38px;
+  border-color: #d8e7ed;
+  border-radius: 11px;
+  box-shadow: 0 5px 14px rgba(31, 99, 136, .10);
+}
+
+.nearby-kakao-map .map-color-legend--readable {
+  gap: 8px;
+  padding: 13px 14px;
+  border-color: #d8e7ed;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .97);
+  color: #496674;
+  box-shadow: 0 5px 14px rgba(31, 99, 136, .10);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.nearby-kakao-map .map-color-legend--readable i {
+  width: 10px;
+  height: 10px;
+}
+
+/* Comment composer: nickname and password occupy the same compact row height */
+.community-comment-form__topline {
+  align-items: center;
+}
+
+.community-comment-form__identity {
+  min-height: 42px;
+}
+
+.community-comment-form__password {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 11px;
+  border: 1px solid #d7e4ea;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.community-comment-form__password > span {
+  flex: 0 0 auto;
+  margin: 0;
+  color: #536f7d;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.community-comment-form__password input {
+  min-width: 0;
+  height: 40px;
+  flex: 1;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+}
+
+@media (max-width: 700px) {
+  .category-section {
+    padding-top: 42px;
+    padding-bottom: 38px;
+  }
+
+  .category-card {
+    min-height: 66px;
+    padding: 10px 13px;
+  }
+
+  .nearby-section .content-section {
+    padding-top: 44px;
+    padding-bottom: 50px;
+  }
+
+  .community-comment-form__password {
+    width: 100%;
+  }
+}
+
+/* =========================================================
+   Home nearby layout — map left, restroom cards stacked right
+   ========================================================= */
+
+@media (min-width: 901px) {
+  .nearby-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.65fr) minmax(300px, .75fr);
+    align-items: stretch;
+    gap: 18px;
+  }
+
+  .nearby-kakao-map.restroom-map-panel {
+    width: 100%;
+    min-width: 0;
+    min-height: 500px;
+    height: 100%;
+  }
+
+  .nearby-home-list {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+    gap: 12px;
+  }
+
+  .nearby-home-list > .nearby-restroom-card,
+  .nearby-home-list > .nearby-restroom-card:nth-child(n + 4) {
+    width: 100%;
+    display: block;
   }
 }
