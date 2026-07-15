@@ -10,7 +10,7 @@ const hoverValue = ref(0)
 
 const displayValue = computed(() => hoverValue.value || props.modelValue || 0)
 const label = computed(() => {
-  if (!displayValue.value) return '별점을 선택해 주세요'
+  if (!displayValue.value) return ''
   if (displayValue.value < 3) return '청결 상태가 아쉬워요'
   if (displayValue.value < 4) return '보통이에요'
   return '깨끗해요'
@@ -26,12 +26,15 @@ function valueFromPointer(event, star) {
   const rect = event.currentTarget.getBoundingClientRect()
   return event.clientX - rect.left < rect.width / 2 ? star - 0.5 : star
 }
+
 function setHover(event, star) {
   if (!props.disabled) hoverValue.value = valueFromPointer(event, star)
 }
+
 function select(event, star) {
   if (!props.disabled) emit('update:modelValue', valueFromPointer(event, star))
 }
+
 function fillWidth(star) {
   if (displayValue.value >= star) return '100%'
   if (displayValue.value === star - 0.5) return '50%'
@@ -57,8 +60,12 @@ function fillWidth(star) {
         <span class="rating-star-empty">★</span>
         <span class="rating-star-fill" :style="{ width: fillWidth(star) }">★</span>
       </button>
-      <strong>{{ displayValue ? displayValue.toFixed(1) : '미선택' }}</strong>
+
+      <strong>
+        {{ displayValue ? `${displayValue.toFixed(1)} / 5` : '미선택' }}
+      </strong>
     </div>
-    <span class="rating-label">{{ label }}</span>
+
+    <span v-if="label" class="rating-label">{{ label }}</span>
   </div>
 </template>
