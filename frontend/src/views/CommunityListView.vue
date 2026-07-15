@@ -216,84 +216,142 @@ watch(
     </section>
 
     <div class="page-container community-board-shell">
-      <CommunityTabs
-        :model-value="category"
-        variant="pills"
-        @update:model-value="changeCategory"
-      />
+      <div class="community-board-layout">
+        <aside class="community-board-sidebar" aria-label="커뮤니티 카테고리">
+          <strong class="community-board-sidebar__title">게시판</strong>
+          <CommunityTabs
+            :model-value="category"
+            variant="sidebar"
+            @update:model-value="changeCategory"
+          />
+        </aside>
 
-      <section class="community-board-content">
-        <section id="community-list-start" class="community-board-toolbar" aria-label="게시글 검색과 정렬">
-          <form class="community-board-search" @submit.prevent="submitSearch">
-            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="1.8" />
-              <path d="m16 16 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-            </svg>
-            <input
-              v-model="keywordInput"
-              type="search"
-              placeholder="제목, 내용, 장소 또는 화장실명 검색"
-              aria-label="커뮤니티 게시글 검색"
+        <section class="community-board-main community-board-content">
+          <section
+            id="community-list-start"
+            class="community-board-toolbar"
+            aria-label="게시글 검색과 정렬"
+          >
+            <form class="community-board-search" @submit.prevent="submitSearch">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="1.8" />
+                <path d="m16 16 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+              </svg>
+
+              <input
+                v-model="keywordInput"
+                type="search"
+                placeholder="제목, 내용, 장소 또는 화장실명 검색"
+                aria-label="커뮤니티 게시글 검색"
+              />
+
+              <button
+                v-if="keywordInput"
+                class="community-board-search__clear"
+                type="button"
+                aria-label="검색어 지우기"
+                @click="clearSearch"
+              >
+                ×
+              </button>
+
+              <button class="community-board-search__submit" type="submit">
+                검색
+              </button>
+            </form>
+
+            <div class="community-board-sort" role="tablist" aria-label="게시글 정렬">
+              <button
+                type="button"
+                role="tab"
+                :class="{ active: sort === 'recent' }"
+                :aria-selected="sort === 'recent'"
+                @click="changeSort('recent')"
+              >
+                최신순
+              </button>
+              <button
+                type="button"
+                role="tab"
+                :class="{ active: sort === 'popular' }"
+                :aria-selected="sort === 'popular'"
+                @click="changeSort('popular')"
+              >
+                인기순
+              </button>
+              <button
+                type="button"
+                role="tab"
+                :class="{ active: sort === 'comments' }"
+                :aria-selected="sort === 'comments'"
+                @click="changeSort('comments')"
+              >
+                댓글순
+              </button>
+            </div>
+          </section>
+
+          <div class="community-board-summary">
+            <strong>{{ resultSummary }}</strong>
+            <span>한 페이지에 {{ pageSize }}개씩 표시</span>
+          </div>
+
+          <div
+            v-if="loading"
+            class="community-board-skeletons"
+            aria-label="게시글을 불러오는 중"
+          >
+            <div
+              v-for="number in 3"
+              :key="number"
+              class="community-board-skeleton"
+            >
+              <div class="skeleton-line short"></div>
+              <div class="skeleton-line title"></div>
+              <div class="skeleton-line"></div>
+              <div class="skeleton-line medium"></div>
+            </div>
+          </div>
+
+          <div v-else-if="error" class="community-board-empty error">
+            <strong>게시글을 불러오지 못했습니다.</strong>
+            <p>{{ error }}</p>
+            <button type="button" @click="loadPosts">다시 시도</button>
+          </div>
+
+          <section
+            v-else-if="posts.length"
+            class="community-board-list"
+            aria-label="게시글 목록"
+          >
+            <CommunityFeedCard
+              v-for="post in posts"
+              :key="post.id"
+              :post="post"
+              @share="sharePost"
             />
-            <button v-if="keywordInput" class="community-board-search__clear" type="button" aria-label="검색어 지우기" @click="clearSearch">×</button>
-            <button class="community-board-search__submit" type="submit">검색</button>
-          </form>
+          </section>
 
-          <div class="community-board-sort" role="tablist" aria-label="게시글 정렬">
-            <button type="button" role="tab" :class="{ active: sort === 'recent' }" :aria-selected="sort === 'recent'" @click="changeSort('recent')">최신순</button>
-            <button type="button" role="tab" :class="{ active: sort === 'popular' }" :aria-selected="sort === 'popular'" @click="changeSort('popular')">인기순</button>
-            <button type="button" role="tab" :class="{ active: sort === 'comments' }" :aria-selected="sort === 'comments'" @click="changeSort('comments')">댓글순</button>
+          <div v-else class="community-board-empty">
+            <span class="community-board-empty__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M5 5h14v11H9l-4 3V5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
+              </svg>
+            </span>
+            <strong>조건에 맞는 게시글이 없습니다.</strong>
+            <p>검색어를 바꾸거나 첫 글을 작성해보세요.</p>
+            <RouterLink :to="writeRoute">글쓰기</RouterLink>
           </div>
-        </section>
 
-        <div class="community-board-summary">
-          <strong>{{ resultSummary }}</strong>
-          <span>한 페이지에 {{ pageSize }}개씩 표시</span>
-        </div>
-
-        <div v-if="loading" class="community-board-skeletons" aria-label="게시글을 불러오는 중">
-          <div v-for="number in 3" :key="number" class="community-board-skeleton">
-            <div class="skeleton-line short"></div>
-            <div class="skeleton-line title"></div>
-            <div class="skeleton-line"></div>
-            <div class="skeleton-line medium"></div>
-          </div>
-        </div>
-
-        <div v-else-if="error" class="community-board-empty error">
-          <strong>게시글을 불러오지 못했습니다.</strong>
-          <p>{{ error }}</p>
-          <button type="button" @click="loadPosts">다시 시도</button>
-        </div>
-
-        <section v-else-if="posts.length" class="community-board-list" aria-label="게시글 목록">
-          <CommunityFeedCard
-            v-for="post in posts"
-            :key="post.id"
-            :post="post"
-            @share="sharePost"
+          <PaginationBar
+            v-if="!loading && !error && total > pageSize"
+            :page="page"
+            :size="pageSize"
+            :total="total"
+            @change="changePage"
           />
         </section>
-
-        <div v-else class="community-board-empty">
-          <span class="community-board-empty__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none">
-              <path d="M5 5h14v11H9l-4 3V5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
-            </svg>
-          </span>
-          <strong>조건에 맞는 게시글이 없습니다.</strong>
-          <p>검색어를 바꾸거나 첫 글을 작성해보세요.</p>
-          <RouterLink :to="writeRoute">글쓰기</RouterLink>
-        </div>
-
-        <PaginationBar
-          v-if="!loading && !error && total > pageSize"
-          :page="page"
-          :size="pageSize"
-          :total="total"
-          @change="changePage"
-        />
-      </section>
+      </div>
     </div>
 
     <p v-if="notice" class="community-feed-toast" role="status">{{ notice }}</p>

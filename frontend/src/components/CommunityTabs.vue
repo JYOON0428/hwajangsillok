@@ -7,7 +7,7 @@ defineProps({
   variant: {
     type: String,
     default: 'cards',
-    validator: (value) => ['cards', 'pills'].includes(value),
+    validator: (value) => ['cards', 'pills', 'sidebar'].includes(value),
   },
 })
 

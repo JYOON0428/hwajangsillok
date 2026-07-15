@@ -6444,3 +6444,300 @@ body {
     padding-left: 10px;
   }
 }
+/* =========================================================
+   2026-07 community sidebar and feed metadata revision
+   ========================================================= */
+
+/* 데스크톱 커뮤니티: 왼쪽 카테고리 사이드바 + 오른쪽 게시글 목록 */
+.community-board-shell {
+  width: min(1180px, calc(100% - 36px));
+}
+
+.community-board-layout {
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr);
+  align-items: start;
+  gap: 20px;
+}
+
+.community-board-sidebar {
+  position: sticky;
+  top: 92px;
+  overflow: hidden;
+  padding: 14px 10px 12px;
+  border: 1px solid #dce6eb;
+  border-radius: 15px;
+  background: #fff;
+}
+
+.community-board-sidebar__title {
+  display: block;
+  padding: 4px 10px 11px;
+  color: #718690;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .04em;
+}
+
+.community-board-sidebar .category-card-grid--sidebar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+}
+
+.community-board-sidebar .category-card--sidebar {
+  width: 100%;
+  min-height: 43px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #5f7480;
+  box-shadow: none;
+  text-align: left;
+}
+
+.community-board-sidebar .category-card--sidebar:hover {
+  background: #f3f8fa;
+  color: #1d607e;
+  box-shadow: none;
+  transform: none;
+}
+
+.community-board-sidebar .category-card--sidebar.active {
+  background: #eaf7fd;
+  color: #087caf;
+  box-shadow: inset 3px 0 0 #108bd0;
+}
+
+.community-board-sidebar .category-card--sidebar .category-card-icon,
+.community-board-sidebar .category-card--sidebar.active .category-card-icon {
+  width: 27px;
+  height: 27px;
+  flex: 0 0 27px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: transparent;
+  color: currentColor;
+}
+
+.community-board-sidebar .category-card--sidebar .category-card-icon svg {
+  width: 17px;
+  height: 17px;
+}
+
+.community-board-sidebar .category-card--sidebar strong {
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.community-board-main {
+  min-width: 0;
+}
+
+/* 게시글 제목 옆에 청결도, 본문 아래에 위치 정보 */
+.community-post-card__title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.community-post-card__rating {
+  margin-top: 1px;
+}
+
+.community-post-card__location-row {
+  width: fit-content;
+  max-width: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  color: #3f6d80;
+}
+
+.community-post-card__location-row:hover strong {
+  color: #087caf;
+}
+
+.community-post-card__location-icon {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 26px;
+  border-radius: 8px;
+  background: #eef7fb;
+  color: #1386b7;
+}
+
+.community-post-card__location-icon svg {
+  width: 15px;
+  height: 15px;
+}
+
+.community-post-card__location-copy {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.community-post-card__location-copy strong,
+.community-post-card__location-copy small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.community-post-card__location-copy strong {
+  color: #3f687a;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.community-post-card__location-copy small {
+  color: #8798a0;
+  font-size: 11px;
+}
+
+.community-post-card__location-copy small::before {
+  content: "·";
+  margin-right: 7px;
+  color: #a5b2b8;
+}
+
+/* 추천·비추천 버튼 가로 길이 축소 */
+.community-post-card__actions .post-vote-control,
+.community-detail-actions .post-vote-control {
+  width: auto;
+  flex: 0 0 auto;
+  gap: 5px;
+}
+
+
+.community-post-card__actions .post-vote-button,
+.community-detail-actions .post-vote-button {
+  width: auto;
+  min-width: 0;
+  min-height: 36px;
+  flex: 0 0 auto;
+  padding: 0 11px;
+  border-radius: 10px;
+  gap: 4px;
+  font-size: 11px;
+}
+
+.community-post-card__actions .post-vote-button svg,
+.community-detail-actions .post-vote-button svg {
+  width: 14px;
+  height: 14px;
+}
+
+.community-post-card__actions .post-vote-button strong,
+.community-detail-actions .post-vote-button strong {
+  min-width: 0;
+  font-size: 11px;
+}
+
+/* 상세 화면의 장소명 앞 설명 문구 제거 후 정렬 보정 */
+.community-detail-context__item > span:last-child {
+  display: flex;
+  align-items: center;
+}
+
+.community-detail-context__item strong {
+  line-height: 1.4;
+}
+
+@media (max-width: 900px) {
+  .community-board-layout {
+    display: block;
+  }
+
+  .community-board-sidebar {
+    position: static;
+    margin-bottom: 14px;
+    padding: 8px;
+    overflow-x: auto;
+    border-radius: 13px;
+    scrollbar-width: none;
+  }
+
+  .community-board-sidebar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .community-board-sidebar__title {
+    display: none;
+  }
+
+  .community-board-sidebar .category-card-grid--sidebar {
+    display: flex;
+    width: max-content;
+    min-width: 100%;
+    gap: 4px;
+  }
+
+  .community-board-sidebar .category-card--sidebar {
+    width: auto;
+    min-height: 38px;
+    flex: 0 0 auto;
+    padding: 0 11px;
+    border-radius: 9px;
+  }
+
+  .community-board-sidebar .category-card--sidebar.active {
+    box-shadow: none;
+  }
+
+  .community-board-sidebar .category-card--sidebar .category-card-icon,
+  .community-board-sidebar .category-card--sidebar.active .category-card-icon {
+    width: 21px;
+    height: 21px;
+    flex-basis: 21px;
+  }
+}
+
+@media (max-width: 720px) {
+  .community-board-shell {
+    width: 100%;
+  }
+
+  .community-board-sidebar {
+    margin-right: 14px;
+    margin-left: 14px;
+  }
+
+  .community-post-card__title-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .community-post-card__rating {
+    width: fit-content;
+  }
+
+  .community-post-card__location-copy {
+    display: grid;
+    gap: 2px;
+  }
+
+  .community-post-card__location-copy small::before {
+    content: none;
+    margin: 0;
+  }
+}
