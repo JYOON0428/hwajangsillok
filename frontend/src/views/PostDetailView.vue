@@ -134,6 +134,15 @@ const hasRelatedContext = computed(
   ),
 )
 
+const restroomReviewsRoute = computed(() => {
+  if (!post.value?.restroomId) return null
+
+  return {
+    name: 'restroom-reviews',
+    params: { id: post.value.restroomId },
+  }
+})
+
 const ratingClass = computed(() => {
   const rating = post.value?.rating
   if (rating == null) return 'rating-none'
@@ -429,7 +438,24 @@ onMounted(() => {
                 </span>
               </div>
 
-              <div v-if="post.restroomName" class="community-detail-context__item">
+              <RouterLink
+                v-if="post.restroomName && restroomReviewsRoute"
+                class="community-detail-context__item community-detail-context__item--restroom-link"
+                :to="restroomReviewsRoute"
+                :aria-label="`${post.restroomName} 리뷰 모아보기`"
+              >
+                <span class="community-detail-context__icon restroom" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M7 5h10v14H7V5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
+                    <path d="M10 9h4M10 12h4M10 15h2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                  </svg>
+                </span>
+                <span>
+                  <strong>{{ post.restroomName }}</strong>
+                </span>
+              </RouterLink>
+
+              <div v-else-if="post.restroomName" class="community-detail-context__item">
                 <span class="community-detail-context__icon restroom" aria-hidden="true">
                   <svg viewBox="0 0 24 24" fill="none">
                     <path d="M7 5h10v14H7V5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />

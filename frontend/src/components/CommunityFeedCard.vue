@@ -19,6 +19,19 @@ const commentsRoute = computed(() => ({
   hash: '#comments',
 }))
 
+const restroomReviewsRoute = computed(() => {
+  if (!props.post.restroomId) return detailRoute.value
+
+  return {
+    name: 'restroom-reviews',
+    params: { id: props.post.restroomId },
+  }
+})
+
+const hasRestroomReviewLink = computed(
+  () => Boolean(props.post.restroomId && props.post.restroomName),
+)
+
 const isFreeBoard = computed(() => props.post.category === '자유게시판')
 
 const showTypeBadge = computed(() => {
@@ -133,7 +146,9 @@ const commentPreview = computed(() => {
     <RouterLink
       v-if="showLocation"
       class="community-post-card__location-row"
-      :to="detailRoute"
+      :to="restroomReviewsRoute"
+      :aria-label="hasRestroomReviewLink ? `${primaryLocation} 리뷰 모아보기` : `${primaryLocation} 관련 게시글 보기`"
+      :class="{ 'community-post-card__location-row--reviews': hasRestroomReviewLink }"
     >
       <span class="community-post-card__location-icon" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none">

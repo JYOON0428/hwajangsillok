@@ -47,10 +47,10 @@ const activeFilterCount = computed(
 )
 
 const resultPlaceName = computed(() => normalizePlaceKeyword(route.query.q || keyword.value))
-const selectedOnlyMapMode = computed(() => route.query.source === 'nearby-card' && Boolean(selectedRestroom.value))
-const mapRestrooms = computed(() => (
-  selectedOnlyMapMode.value && selectedRestroom.value ? [selectedRestroom.value] : restrooms.value
-))
+// 홈의 지도 마커나 주변 화장실 카드를 통해 진입해도
+// 선택한 화장실만 고립시키지 않고 같은 반경의 전체 목록을 함께 표시한다.
+const selectedOnlyMapMode = computed(() => false)
+const mapRestrooms = computed(() => restrooms.value)
 const searchAnchorLocation = computed(() => {
   const center = restrooms.value[0]?.searchCenter
   if (center?.latitude && center?.longitude) {
@@ -217,6 +217,31 @@ function writeReview() {
       restroomId: selectedRestroom.value.id,
       restroomName: selectedRestroom.value.name,
     },
+  })
+}
+
+function openReviewPost(review) {
+  const postId = Number(
+    review?.postId
+      ?? review?.post_id
+      ?? review?.communityPostId
+      ?? review?.community_post_id
+      ?? review?.id,
+  )
+
+  if (!postId) {
+    router.push({
+      name: 'community',
+      query: {
+        keyword: review?.title || selectedRestroom.value?.name || '',
+      },
+    })
+    return
+  }
+
+  router.push({
+    name: 'post-detail',
+    params: { id: postId },
   })
 }
 
@@ -387,6 +412,7 @@ onMounted(() => loadRestrooms({ preserveSelection: false }))
         @update:review-sort="reviewSort = $event"
         @write-review="writeReview"
         @share="shareSelectedRestroom"
+        @open-review-post="openReviewPost"
       />
 
       <div class="restroom-map-pane">

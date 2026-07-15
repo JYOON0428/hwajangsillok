@@ -273,11 +273,47 @@ export async function getMockRestroom(restroomId) {
 
 export async function getMockRestroomReviews(restroomId, { sort = 'recent' } = {}) {
   await wait()
-  const items = clone(restroomReviews[Number(restroomId)] || [])
+
+  const resolvedRestroomId = Number(restroomId)
+  const linkedPosts = readPosts()
+    .filter((post) => Number(post.restroomId) === resolvedRestroomId)
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+
+  const items = clone(restroomReviews[resolvedRestroomId] || []).map((review, index) => {
+    const exactPost = linkedPosts.find((post) => post.title === review.title)
+    const linkedPost = exactPost || linkedPosts[index] || linkedPosts[0]
+
+    return {
+      ...review,
+      postId: linkedPost?.id ?? review.postId ?? null,
+    }
+  })
+
+  const existingTitles = new Set(items.map((review) => review.title))
+  linkedPosts.forEach((post) => {
+    if (existingTitles.has(post.title)) return
+
+    items.push({
+      id: `post-${post.id}`,
+      postId: post.id,
+      title: post.title,
+      cleanliness: post.rating,
+      content: post.content,
+      imageUrls: Array.isArray(post.imageUrls)
+        ? post.imageUrls
+        : post.imageUrl
+          ? [post.imageUrl]
+          : [],
+      commentCount: post.commentCount || 0,
+      createdAt: post.createdAt,
+      createdAtLabel: post.createdAtLabel || '',
+    })
+  })
+
   const sorters = {
     recent: (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
-    cleanlinessHigh: (a, b) => b.cleanliness - a.cleanliness,
-    cleanlinessLow: (a, b) => a.cleanliness - b.cleanliness,
+    cleanlinessHigh: (a, b) => (b.cleanliness ?? -1) - (a.cleanliness ?? -1),
+    cleanlinessLow: (a, b) => (a.cleanliness ?? 999) - (b.cleanliness ?? 999),
     comments: (a, b) => b.commentCount - a.commentCount,
   }
   return items.sort(sorters[sort] || sorters.recent)
