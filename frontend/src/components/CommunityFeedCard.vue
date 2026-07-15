@@ -34,10 +34,19 @@ const hasRestroomReviewLink = computed(
 
 const isFreeBoard = computed(() => props.post.category === '자유게시판')
 
+function getCategoryLabel(value) {
+  return value === '일반 게시판' || value === '일반'
+    ? '일반'
+    : value
+}
+
+const categoryBadgeLabel = computed(() => getCategoryLabel(props.post.category))
+const typeBadgeLabel = computed(() => getCategoryLabel(props.post.postType))
+
 const showTypeBadge = computed(() => {
   const type = String(props.post.postType || '').trim()
   if (!type) return false
-  if (type === props.post.category) return false
+  if (getCategoryLabel(type) === categoryBadgeLabel.value) return false
   if (type === '화장실 리뷰') return false
   return true
 })
@@ -110,8 +119,8 @@ const commentPreview = computed(() => {
   <article class="community-post-card">
     <header class="community-post-card__header">
       <div class="community-post-card__badges">
-        <span class="category">{{ post.category }}</span>
-        <span v-if="showTypeBadge" class="type">{{ post.postType }}</span>
+        <span class="category">{{ categoryBadgeLabel }}</span>
+        <span v-if="showTypeBadge" class="type">{{ typeBadgeLabel }}</span>
       </div>
 
       <div class="community-post-card__meta">

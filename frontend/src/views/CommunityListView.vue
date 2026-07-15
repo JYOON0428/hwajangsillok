@@ -26,15 +26,21 @@ const notice = ref('')
 let requestSequence = 0
 let noticeTimer = null
 
+function getCategoryLabel(value) {
+  return value === '일반 게시판' || value === '일반'
+    ? '일반'
+    : value
+}
+
 const pageTitle = computed(() =>
-  category.value === '전체' ? '커뮤니티' : category.value,
+  category.value === '전체' ? '커뮤니티' : getCategoryLabel(category.value),
 )
 
 const pageDescription = computed(() => {
   if (category.value === '전체') return '장소별 이용 후기와 현장 정보를 한곳에서 확인하세요.'
   if (category.value === '자유게시판') return '화장실 이용과 관련된 자유로운 이야기를 나눠보세요.'
-  if (category.value === '일반 게시판') return '관광 카테고리에 속하지 않는 화장실 후기와 제보를 확인하세요.'
-  return `${category.value} 주변의 화장실 후기와 이용 정보를 확인하세요.`
+  if (category.value === '일반 게시판' || category.value === '일반') return '관광 카테고리에 속하지 않는 화장실 후기와 제보를 확인하세요.'
+  return `${getCategoryLabel(category.value)} 주변의 화장실 후기와 이용 정보를 확인하세요.`
 })
 
 const writeRoute = computed(() => ({

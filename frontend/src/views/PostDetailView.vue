@@ -116,10 +116,19 @@ const commentCount = computed(() => {
 
 const isFreeBoard = computed(() => post.value?.category === '자유게시판')
 
+function getCategoryLabel(value) {
+  return value === '일반 게시판' || value === '일반'
+    ? '일반'
+    : value
+}
+
+const categoryBadgeLabel = computed(() => getCategoryLabel(post.value?.category))
+const typeBadgeLabel = computed(() => getCategoryLabel(post.value?.postType))
+
 const showTypeBadge = computed(() => {
   const type = String(post.value?.postType || '').trim()
   if (!type) return false
-  if (type === post.value?.category) return false
+  if (getCategoryLabel(type) === categoryBadgeLabel.value) return false
   if (type === '화장실 리뷰') return false
   return true
 })
@@ -421,7 +430,7 @@ onMounted(() => {
             />
           </svg>
         </span>
-        <span>리뷰 목록</span>
+        <span>커뮤니티 목록</span>
       </button>
 
       <p v-if="loading" class="state-message">게시글을 불러오는 중입니다.</p>
@@ -431,8 +440,8 @@ onMounted(() => {
         <article class="community-detail-card">
           <header class="community-detail-meta">
             <div class="community-post-card__badges">
-              <span class="category">{{ post.category }}</span>
-              <span v-if="showTypeBadge" class="type">{{ post.postType }}</span>
+              <span class="category">{{ categoryBadgeLabel }}</span>
+              <span v-if="showTypeBadge" class="type">{{ typeBadgeLabel }}</span>
             </div>
             <p>{{ post.nickname || '익명 사용자' }} · {{ createdAtLabel }}</p>
           </header>
