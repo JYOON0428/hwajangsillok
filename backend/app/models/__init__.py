@@ -68,9 +68,11 @@ class Review(Base):
     
     review_id = Column(Integer, primary_key=True, index=True)
     toilet_id = Column(Integer, ForeignKey("toilets.toilet_id"), index=True)
+    post_id = Column(Integer, ForeignKey("posts.post_id"), nullable=True, index=True)
     rating = Column(Float)  # 0~5
     content = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
     
     # 관계
     toilet = relationship("Toilet", back_populates="reviews")
+    post = relationship("Post", backref="linked_reviews")

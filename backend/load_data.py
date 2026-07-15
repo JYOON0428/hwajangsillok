@@ -413,10 +413,17 @@ def load_sample_posts() -> int:
             )
             db.add(post)
 
+            # Ensure post has a primary key assigned before creating a linked review
+            try:
+                db.flush()
+            except Exception:
+                pass
+
             if toilet:
                 db.add(
                     Review(
                         toilet_id=toilet.toilet_id,
+                        post_id=post.post_id if getattr(post, "post_id", None) else None,
                         rating=place["rating"],
                         content=place["content"],
                         created_at=datetime.utcnow(),
