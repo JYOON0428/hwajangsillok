@@ -10,7 +10,7 @@ from sqlalchemy import and_, func, or_
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Post, Review, Toilet
+from app.models import Post, Review, Toilet, Comment
 
 router = APIRouter(prefix="/api", tags=["frontend"])
 
@@ -302,6 +302,16 @@ def _normalize_post(post: Post, anonymous_name: str | None = None) -> dict[str, 
         "updatedAt": _client_datetime(post.updated_at),
         "imageUrl": urls[0] if urls else "",
         "imageUrls": urls,
+        "comments": [
+            {
+                "id": c.id,
+                "nickname": c.nickname,
+                "content": c.content,
+                "createdAt": _client_datetime(c.created_at),
+                "updatedAt": _client_datetime(c.updated_at) if getattr(c, 'updated_at', None) else None,
+            }
+            for c in (post.comments or [])
+        ],
     }
 
 
@@ -616,6 +626,116 @@ async def get_post(post_id: int, db: Session = Depends(get_db)):
     if not post:
         raise HTTPException(status_code=404, detail="게시글을 찾을 수 없습니다.")
     return _normalize_post(post, _anonymous_name_for_post(db, post))
+
+
+@router.get("/posts/{post_id}/comments")
+async def list_post_comments(post_id: int, db: Session = Depends(get_db)):
+    post = db.query(Post).filter(Post.post_id == post_id).first()
+    if not post:
+        raise HTTPException(status_code=404, detail="게시글을 찾을 수 없습니다.")
+    comments = db.query(Comment).filter(Comment.post_id == post_id).order_by(Comment.created_at.asc()).all()
+    result = []
+    for c in comments:
+        result.append({
+            "id": c.id,
+            "post_id": c.post_id,
+            "nickname": c.nickname,
+            "content": c.content,
+            "createdAt": _client_datetime(c.created_at),
+            "updatedAt": _client_datetime(c.updated_at) if getattr(c, 'updated_at', None) else None,
+        })
+    return result
+
+
+@router.post("/posts/{post_id}/comments", status_code=status.HTTP_201_CREATED)
+async def create_post_comment(post_id: int, request: Request, db: Session = Depends(get_db)):
+    post = db.query(Post).filter(Post.post_id == post_id).first()
+    if not post:
+        raise HTTPException(status_code=404, detail="게시글을 찾을 수 없습니다.")
+    try:
+        payload = await request.json()
+    except json.JSONDecodeError:
+        payload = {}
+
+    nickname = str(payload.get("nickname") or "익명")
+    password = str(payload.get("password") or "")
+    content = str(payload.get("content") or "").strip()
+    if not content or not password or len(password) < 1:
+        raise HTTPException(status_code=400, detail="내용과 비밀번호는 필수입니다.")
+
+    comment = Comment(
+        post_id=post_id,
+        nickname=nickname,
+        password=password,
+        content=content,
+    )
+    db.add(comment)
+    db.commit()
+    db.refresh(comment)
+    # update post comment count
+    post.comment_count = (post.comment_count or 0) + 1
+    db.commit()
+
+    return {
+        "id": comment.id,
+        "post_id": comment.post_id,
+        "nickname": comment.nickname,
+        "content": comment.content,
+        "createdAt": _client_datetime(comment.created_at),
+        "updatedAt": _client_datetime(comment.updated_at) if getattr(comment, 'updated_at', None) else None,
+    }
+
+
+@router.put("/posts/{post_id}/comments/{comment_id}")
+async def update_post_comment(post_id: int, comment_id: int, request: Request, db: Session = Depends(get_db)):
+    comment = db.query(Comment).filter(Comment.id == comment_id, Comment.post_id == post_id).first()
+    if not comment:
+        raise HTTPException(status_code=404, detail="댓글을 찾을 수 없습니다.")
+    try:
+        payload = await request.json()
+    except json.JSONDecodeError:
+        payload = {}
+
+    password = str(payload.get("password") or "")
+    content = str(payload.get("content") or "").strip()
+    if comment.password != password:
+        raise HTTPException(status_code=401, detail="비밀번호가 일치하지 않습니다.")
+    if not content:
+        raise HTTPException(status_code=400, detail="내용을 입력해 주세요.")
+
+    comment.content = content
+    comment.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(comment)
+    return {
+        "id": comment.id,
+        "post_id": comment.post_id,
+        "nickname": comment.nickname,
+        "content": comment.content,
+        "createdAt": _client_datetime(comment.created_at),
+        "updatedAt": _client_datetime(comment.updated_at) if getattr(comment, 'updated_at', None) else None,
+    }
+
+
+@router.delete("/posts/{post_id}/comments/{comment_id}")
+async def delete_post_comment(post_id: int, comment_id: int, request: Request, db: Session = Depends(get_db)):
+    comment = db.query(Comment).filter(Comment.id == comment_id, Comment.post_id == post_id).first()
+    if not comment:
+        raise HTTPException(status_code=404, detail="댓글을 찾을 수 없습니다.")
+    try:
+        payload = await request.json()
+    except json.JSONDecodeError:
+        payload = {}
+    password = str(payload.get("password") or "")
+    if comment.password != password:
+        raise HTTPException(status_code=401, detail="비밀번호가 일치하지 않습니다.")
+    db.delete(comment)
+    # decrement post comment_count
+    post = db.query(Post).filter(Post.post_id == post_id).first()
+    if post and post.comment_count and post.comment_count > 0:
+        post.comment_count = post.comment_count - 1
+    db.commit()
+    return {"ok": True}
 
 
 @router.post("/posts/{post_id}/verify-password")
