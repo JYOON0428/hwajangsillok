@@ -44,65 +44,24 @@
 - Git
 - VSCode
 
-Windows PowerShell 기준 명령어를 기본으로 적었습니다. macOS/Linux는 `python` 대신 `python3`을 쓰면 됩니다.
-
 ## 1. 프로젝트 클론
 
 ```powershell
-git clone <REPOSITORY_URL>
+git clone https://lab.ssafy.com/s16/a20/260714-startcamp-pjt/2.git
 cd 2
 ```
 
-이미 압축 파일로 받은 경우에는 압축을 풀고 `2` 폴더를 VSCode로 열면 됩니다.
+## 2. .env 파일 생성
 
-## 2. 카카오 API 키 준비
+- 2/frontend, 2/backend 디렉토리에 각각 .env 파일을 만들고, 제공받은 내용을 붙여넣습니다.
 
-이 프로젝트는 지도 표시와 주소 좌표 변환에 카카오 API를 사용합니다.
-
-1. [Kakao Developers](https://developers.kakao.com/)에 로그인합니다.
-2. 내 애플리케이션에서 앱을 생성합니다.
-3. 제품 설정에서 `카카오맵` 또는 `카카오맵/로컬` 사용 설정을 켭니다.
-4. 플랫폼 설정에서 Web 플랫폼을 등록합니다.
-5. 사이트 도메인에 아래 주소를 등록합니다.
-
-```text
-http://localhost:5173
-```
-
-6. 앱 키 화면에서 아래 두 키를 확인합니다.
-
-- JavaScript 키: 프론트엔드 지도 표시용
-- REST API 키: 백엔드 주소 지오코딩용
-
-API 호출이 `403`으로 실패하면서 `disabled OPEN_MAP_AND_LOCAL service`가 보이면 카카오맵/로컬 사용 설정이 꺼진 상태입니다.
-
-## 3. 환경변수 파일 만들기
-
-`.env` 파일은 Git에 올리지 않습니다. 각자 로컬에서 예시 파일을 복사해서 만듭니다.
-
-### Backend
-
-```powershell
-cd backend
-copy .env.example .env
-```
-
-`backend/.env`를 열고 REST API 키를 넣습니다.
-
+### backend
 ```env
 KAKAO_REST_API_KEY=여기에_카카오_REST_API_키
 KAKAO_GEOCODE_DELAY=0.03
 ```
 
 ### Frontend
-
-```powershell
-cd ../frontend
-copy .env.example .env
-```
-
-`frontend/.env`를 열고 JavaScript 키를 넣습니다.
-
 ```env
 VITE_API_BASE_URL=http://localhost:8000
 VITE_USE_MOCK_API=false
@@ -130,7 +89,7 @@ python load_data.py
 
 처음 실행할 때는 데이터가 많아서 몇 분 걸릴 수 있습니다.
 
-정상 실행 예시는 다음과 비슷합니다.
+아래 출력과 비슷하게 나오면 성공입니다.
 
 ```text
 Database tables recreated.
