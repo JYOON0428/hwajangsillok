@@ -8,7 +8,11 @@ defineProps({
   reviewsLoading: { type: Boolean, default: false },
 })
 
-const emit = defineEmits(['update:reviewSort', 'write-review', 'share'])
+const emit = defineEmits(['update:reviewSort', 'write-review', 'share', 'open-review-post'])
+
+function forwardOpenPost(review) {
+  emit('open-review-post', review)
+}
 
 function ratingClass(rating) {
   if (rating == null) return 'rating-none'
@@ -134,6 +138,7 @@ function operationStatus(restroom) {
             :key="review.id"
             :review="review"
             :distance-meters="restroom.distanceMeters"
+            @open-post="forwardOpenPost"
           />
         </div>
       </section>

@@ -60,6 +60,7 @@ class Post(Base):
     
     # 관계
     toilet = relationship("Toilet", back_populates="posts")
+    comments = relationship("Comment", back_populates="post")
 
 
 class Review(Base):
@@ -76,3 +77,18 @@ class Review(Base):
     # 관계
     toilet = relationship("Toilet", back_populates="reviews")
     post = relationship("Post", backref="linked_reviews")
+
+
+class Comment(Base):
+    """게시글 댓글 모델"""
+    __tablename__ = "comments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    post_id = Column(Integer, ForeignKey("posts.post_id"), index=True)
+    nickname = Column(String(50), nullable=False)
+    password = Column(String(255), nullable=False)
+    content = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    post = relationship("Post", back_populates="comments")
