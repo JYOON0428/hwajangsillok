@@ -326,6 +326,78 @@ def _anonymous_name_for_post(db: Session, post: Post) -> str:
     return f"익명의 사용자 {int(sequence)}"
 
 
+# --- OpenAI function-calling: FUNCTIONS spec & DB helper ---
+FUNCTIONS = [
+    {
+        "name": "get_nearby_toilets",
+        "description": "주어진 좌표 주변의 화장실 목록을 반환합니다. 위치, 거리, 평점, 시설 정보(기저귀, 장애인 등)를 확인해야 할 때 사용합니다.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "latitude": {"type": "number", "description": "사용자 현재 위도"},
+                "longitude": {"type": "number", "description": "사용자 현재 경도"},
+                "radius": {"type": "integer", "description": "검색 반경(미터). 명시되지 않으면 기본 1000."},
+                "sort_by": {"type": "string", "enum": ["distance", "rating"], "description": "정렬 기준. 기본은 distance(거리순). 리뷰/평점순이면 rating."},
+                "needs_diaper_table": {"type": "boolean", "description": "기저귀 교환대 필요 여부"},
+                "needs_handicap": {"type": "boolean", "description": "장애인 화장실 필요 여부"},
+                "needs_emergency_bell": {"type": "boolean", "description": "비상벨 필요 여부"}
+            },
+            "required": ["latitude", "longitude"]
+        }
+    }
+]
+
+
+def _execute_get_nearby_toilets(
+    db: Session, 
+    latitude: float, 
+    longitude: float, 
+    radius: int = 1000, 
+    sort_by: str = "distance",
+    needs_diaper_table: bool = False,
+    needs_handicap: bool = False,
+    needs_emergency_bell: bool = False,
+    limit: int = 3
+):
+    try:
+        lat = float(latitude)
+        lon = float(longitude)
+    except (TypeError, ValueError):
+        return []
+
+    items = []
+    # 위/경도가 있는 화장실만 조회
+    toilets = db.query(Toilet).filter(Toilet.latitude != 0, Toilet.longitude != 0).all()
+
+    for toilet in toilets:
+        # OpenAI가 뽑아준 조건 필터링
+        if needs_diaper_table and not toilet.diaper_changing_table: continue
+        if needs_handicap and not toilet.handicap_facility: continue
+        if needs_emergency_bell and not toilet.emergency_bell: continue
+
+        dist = _distance_meters(lat, lon, toilet.latitude, toilet.longitude)
+        if dist <= radius:
+            normalized = _normalize_restroom(db, toilet, dist)
+            items.append({
+                "name": normalized.get("name"),
+                "address": normalized.get("address"),
+                "distanceMeters": round(dist, 2),
+                "rating": normalized.get("rating"),
+                "diaper_table": bool(toilet.diaper_changing_table),
+                "handicap": bool(toilet.handicap_facility)
+            })
+
+    # 정렬 (OpenAI가 요청한 기준에 따라)
+    if sort_by == "rating":
+        # 평점 내림차순, 같으면 거리 오름차순
+        items.sort(key=lambda i: (-(i.get("rating") or 0), i["distanceMeters"]))
+    else:
+        # 기본 거리 오름차순
+        items.sort(key=lambda i: i["distanceMeters"])
+
+    return items[:limit]
+
+
 def _load_poi_index() -> list[dict[str, Any]]:
     if hasattr(_load_poi_index, "cache"):
         return getattr(_load_poi_index, "cache")
@@ -762,32 +834,87 @@ async def delete_post(post_id: int, request: Request, db: Session = Depends(get_
 
 @router.post("/chat")
 async def chat(payload: dict[str, Any], db: Session = Depends(get_db)):
-    # Try OpenAI first if configured; on any failure, fall back to rule-based search
+    # 메시지, 히스토리, 선택적으로 프론트 좌표를 사용
     message = str(payload.get("message") or "")
-    history = payload.get("history")
+    history = payload.get("history") or [{"role": "user", "content": message}]
+    user_lat = payload.get("latitude")
+    user_lon = payload.get("longitude")
+
+    # system prompt로 역할 명시
+    system_message = {
+        "role": "system",
+        "content": "너는 우리 서비스의 화장실 안내 봇이야. 화장실 검색 결과가 주어지면, 그 데이터를 바탕으로 사용자에게 친절하고 자연스러운 문장으로 안내해줘."
+    }
+    messages_for_openai = [system_message] + history
 
     openai_key = os.getenv("OPENAI_API_KEY")
     openai_model = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
 
     if openai_key:
         try:
-            send_messages = history if history else [{"role": "user", "content": message}]
-            body = {"model": openai_model, "messages": send_messages}
             async with httpx.AsyncClient(timeout=30.0) as client:
                 resp = await client.post(
                     "https://api.openai.com/v1/chat/completions",
                     headers={"Authorization": f"Bearer {openai_key}"},
-                    json=body,
+                    json={
+                        "model": openai_model,
+                        "messages": messages_for_openai,
+                        "functions": FUNCTIONS,
+                        "function_call": "auto",
+                    },
                 )
                 resp.raise_for_status()
                 data = resp.json()
-                assistant_text = data.get("choices", [])[0].get("message", {}).get("content", "")
-                return {"answer": assistant_text, "locations": [], "warnings": []}
+
+            msg = data["choices"][0]["message"]
+
+            # 모델이 함수 호출을 요청하면 DB 조회 실행 후 모델에 결과를 전달하여 최종 응답을 얻음
+            if msg.get("function_call"):
+                fname = msg["function_call"]["name"]
+                fargs_raw = msg["function_call"].get("arguments") or "{}"
+                fargs = json.loads(fargs_raw)
+
+                if fname == "get_nearby_toilets":
+                    lat = user_lat if user_lat else fargs.get("latitude")
+                    lon = user_lon if user_lon else fargs.get("longitude")
+                    result_data = _execute_get_nearby_toilets(
+                        db=db,
+                        latitude=lat,
+                        longitude=lon,
+                        radius=fargs.get("radius", 1000),
+                        sort_by=fargs.get("sort_by", "distance"),
+                        needs_diaper_table=fargs.get("needs_diaper_table", False),
+                        needs_handicap=fargs.get("needs_handicap", False),
+                        needs_emergency_bell=fargs.get("needs_emergency_bell", False),
+                    )
+                else:
+                    result_data = []
+
+                messages_for_openai.append(msg)
+                messages_for_openai.append(
+                    {"role": "function", "name": fname, "content": json.dumps(result_data, ensure_ascii=False)}
+                )
+
+                async with httpx.AsyncClient(timeout=30.0) as client:
+                    resp2 = await client.post(
+                        "https://api.openai.com/v1/chat/completions",
+                        headers={"Authorization": f"Bearer {openai_key}"},
+                        json={"model": openai_model, "messages": messages_for_openai},
+                    )
+                    resp2.raise_for_status()
+                    final_data = resp2.json()
+
+                final_answer = final_data["choices"][0]["message"].get("content", "")
+                return {"answer": final_answer, "locations": result_data, "warnings": []}
+
+            # 함수 호출이 필요 없으면 assistant content 반환
+            assistant_text = msg.get("content", "")
+            return {"answer": assistant_text, "locations": [], "warnings": []}
         except Exception:
-            # fallback to rule-based behavior below
+            # OpenAI 관련 에러 시 기존 룰 기반 폴백으로 진행
             pass
 
-    # --- rule-based fallback search (existing behavior) ---
+    # --- 기존 룰 기반 폴백 ---
     radius = 1000
     if "2km" in message or "2킬로" in message:
         radius = 2000

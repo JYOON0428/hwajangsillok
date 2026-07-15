@@ -115,7 +115,6 @@ class PostResponse(BaseModel):
 class PostDetailResponse(PostResponse):
     """상세 조회용 응답"""
     toilet: Optional[ToiletResponse] = None
-    comments: Optional[List[dict]] = []
 
 
 # ============ Review Schemas ============
@@ -134,25 +133,6 @@ class ReviewResponse(ReviewBase):
     post_id: Optional[int] = None
     created_at: datetime
     
-    class Config:
-        from_attributes = True
-
-
-# ============ Comment Schemas ============
-class CommentCreate(BaseModel):
-    nickname: str
-    password: str
-    content: str
-
-
-class CommentResponse(BaseModel):
-    id: int
-    post_id: int
-    nickname: str
-    content: str
-    created_at: datetime
-    updated_at: Optional[datetime] = None
-
     class Config:
         from_attributes = True
 
