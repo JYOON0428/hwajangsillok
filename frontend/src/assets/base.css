@@ -10360,9 +10360,12 @@ body {
 
 .community-comment-form__avatar > span,
 .community-comment-item__avatar > span {
-  display: block;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
   line-height: 1;
-  transform: translateY(-1px);
+  transform: translateY(1px);
 }
 
 /* 커뮤니티 목록 본문 가독성 강화 */
@@ -11464,5 +11467,726 @@ body {
   .map-secondary-controls {
     top: 12px;
     right: 12px;
+  }
+}
+
+/* =========================================================
+   Map detail review/share action alignment — 2026-07-15
+   ========================================================= */
+.restroom-detail-header--refined .refined-detail-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 9px;
+  margin-top: 17px !important;
+}
+
+/* 홈의 리뷰 쓰기 CTA와 동일한 색상·크기 체계 */
+.restroom-detail-header--refined .detail-review-button {
+  min-width: 0;
+  min-height: 40px;
+  justify-self: auto;
+  flex: 0 0 auto;
+  gap: 7px;
+  padding: 0 15px;
+  border: 1px solid #0284c7;
+  border-radius: 11px;
+  background: linear-gradient(135deg, #0ea5e9, #0284c7);
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(2, 132, 199, .18);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.restroom-detail-header--refined .detail-review-button:hover {
+  border-color: #0369a1;
+  background: linear-gradient(135deg, #079bdc, #0369a1);
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(2, 132, 199, .24);
+}
+
+.restroom-detail-header--refined .detail-review-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* 공유 버튼을 리뷰 쓰기 바로 옆에 두고 동일한 높이로 정렬 */
+.restroom-detail-header--refined .detail-share-button {
+  min-width: 70px;
+  min-height: 40px;
+  flex: 0 0 auto;
+  padding: 0 12px;
+  border-radius: 11px;
+}
+
+@media (max-width: 560px) {
+  .restroom-detail-header--refined .refined-detail-actions {
+    justify-content: flex-end;
+  }
+
+  .restroom-detail-header--refined .detail-review-button {
+    min-height: 40px;
+    padding: 0 14px;
+    font-size: 12px;
+  }
+
+  .restroom-detail-header--refined .detail-share-button {
+    width: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    padding: 0;
+  }
+}
+
+
+/* =========================================================
+   Review editor — home theme and usability refinement
+   ========================================================= */
+.post-editor-page {
+  position: relative;
+  min-height: calc(100vh - 72px);
+  padding: 34px 20px 88px;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, #f5fbff 0, #fbfdff 260px, #fff 560px);
+}
+
+.post-editor-page::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 310px;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(14, 165, 233, .032) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(14, 165, 233, .032) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, .72), transparent 94%);
+}
+
+.post-editor-shell {
+  position: relative;
+  z-index: 1;
+  width: min(920px, 100%);
+}
+
+.post-editor-header {
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.post-editor-header > div {
+  min-width: 0;
+}
+
+.post-editor-header > div span {
+  display: block;
+  margin: 1px 0 5px;
+  color: #6c8491;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.post-editor-header h1 {
+  margin: 0;
+  color: #102a3a;
+  font-size: clamp(27px, 3vw, 34px);
+  line-height: 1.25;
+  font-weight: 850;
+  letter-spacing: -1.1px;
+}
+
+.editor-back-button {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  border: 1px solid #dbe8ee;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .92);
+  color: #31576b;
+  box-shadow: 0 6px 16px rgba(31, 86, 116, .06);
+}
+
+.editor-back-button:hover {
+  border-color: #a9d9ec;
+  background: #eef9fe;
+  color: #027bb7;
+}
+
+.post-editor-form {
+  overflow: visible;
+  border: 1px solid #e1ebf0;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, .98);
+  box-shadow: 0 16px 42px rgba(31, 91, 122, .075);
+}
+
+.editor-section {
+  row-gap: 18px;
+  padding: 27px 32px;
+  border-bottom: 1px solid #edf3f6;
+}
+
+.editor-section-heading {
+  margin: 0;
+}
+
+.editor-section-heading > div {
+  display: grid;
+  gap: 5px;
+  min-height: auto;
+}
+
+.editor-section-heading h2 {
+  margin: 0;
+  color: #17384a;
+  font-size: 18px;
+  line-height: 1.35;
+  font-weight: 800;
+  letter-spacing: -.35px;
+}
+
+.editor-section-heading h2 .optional-mark {
+  margin-left: 5px;
+  vertical-align: 2px;
+}
+
+.editor-section-heading p {
+  margin: 0;
+  color: #8497a1;
+  font-size: 11px;
+  line-height: 1.55;
+  text-align: left;
+}
+
+.editor-author-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 1fr);
+  gap: 14px;
+  align-items: stretch;
+}
+
+.editor-author-identity,
+.editor-password-verified {
+  min-width: 0;
+  min-height: 88px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 15px 16px;
+  border: 1px solid #e0eaf0;
+  border-radius: 14px;
+  background: #f8fcfe;
+}
+
+.editor-author-avatar {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  display: grid;
+  place-items: center;
+  padding-top: 1px;
+  border-radius: 50%;
+  background: #e6f6fd;
+  color: #087dac;
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1;
+}
+
+.editor-author-identity > div,
+.editor-password-verified {
+  min-width: 0;
+}
+
+.editor-author-identity small,
+.editor-password-verified > span {
+  display: block;
+  color: #82959f;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.editor-author-identity strong,
+.editor-password-verified strong {
+  display: block;
+  margin-top: 3px;
+  overflow: hidden;
+  color: #274c5e;
+  font-size: 14px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.editor-author-identity p,
+.editor-password-verified small {
+  display: block;
+  margin: 3px 0 0;
+  color: #94a3aa;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.editor-password-verified {
+  display: block;
+}
+
+.editor-password-verified strong {
+  color: #1c9a68;
+}
+
+.editor-password-field {
+  min-width: 0;
+  padding: 0;
+}
+
+.editor-password-field > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 9px;
+  color: #2c4654;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.editor-password-field input {
+  width: 100%;
+  height: 48px;
+  padding: 0 14px;
+  border: 1px solid #dce7ec;
+  border-radius: 12px;
+  outline: 0;
+  background: #fff;
+  color: #173546;
+}
+
+.editor-password-field input:focus {
+  border-color: #67c4ed;
+  box-shadow: 0 0 0 4px rgba(14, 165, 233, .09);
+}
+
+.editor-password-field > small {
+  display: block;
+  margin-top: 7px;
+  color: #91a1aa;
+  font-size: 10px;
+}
+
+.category-field,
+.restroom-selector,
+.rating-field,
+.editor-text-field {
+  margin-top: 20px;
+}
+
+.editor-category-tabs {
+  gap: 8px;
+}
+
+.editor-category-tabs button {
+  min-height: 40px;
+  padding: 0 16px;
+  border-color: #dce7ec;
+  background: #fff;
+  color: #607784;
+  font-size: 13px;
+  font-weight: 700;
+  transition: border-color .16s ease, background .16s ease, color .16s ease, transform .16s ease;
+}
+
+.editor-category-tabs button:hover {
+  border-color: #9fd8f0;
+  color: #087dad;
+  transform: translateY(-1px);
+}
+
+.editor-category-tabs button.active {
+  border-color: #58c2ef;
+  background: #eaf8ff;
+  color: #0478b1;
+  box-shadow: inset 0 0 0 1px rgba(14, 165, 233, .08);
+}
+
+.form-label-row {
+  margin-bottom: 9px;
+}
+
+.post-editor-form .form-label-row > label,
+.post-editor-form .editor-text-field > .form-label-row > span {
+  color: #294656;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.post-editor-form .form-label-row > small {
+  color: #78909d;
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.post-editor-form .required-mark,
+.post-editor-form .optional-mark {
+  min-height: 18px;
+  padding: 2px 6px;
+  font-size: 9px;
+}
+
+.restroom-selector {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.selected-restroom-card {
+  min-height: 72px;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  gap: 12px;
+  padding: 12px 13px;
+  border-color: #cde8f4;
+  border-radius: 13px;
+  background: #f9fdff;
+}
+
+.selected-restroom-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+}
+
+.selected-restroom-card strong {
+  margin-top: 0;
+  overflow: hidden;
+  color: #244b5d;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selected-restroom-card p {
+  overflow: hidden;
+  margin-top: 4px;
+  color: #84959e;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.selected-restroom-card > button {
+  min-height: 34px;
+  padding: 0 11px;
+  border-color: #d7e6ed;
+  color: #52707f;
+}
+
+.restroom-search-box {
+  padding: 13px;
+  border: 1px solid #dce8ed;
+  border-radius: 13px;
+  background: #f9fcfe;
+}
+
+.cleanliness-rating {
+  min-height: 62px;
+  justify-content: flex-start;
+  gap: 16px;
+  padding: 9px 13px;
+  border-color: #dce8ed;
+  border-radius: 13px;
+  background: #fbfdfe;
+}
+
+.rating-stars {
+  gap: 2px;
+}
+
+.rating-star-button {
+  width: 36px;
+  height: 38px;
+  font-size: 30px;
+  cursor: pointer;
+}
+
+.rating-star-empty {
+  color: #d7e2e8;
+}
+
+.rating-stars strong {
+  min-width: 76px;
+  margin-left: 10px;
+  color: #667c88;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.cleanliness-rating:not(.rating-empty) .rating-stars strong {
+  color: currentColor;
+}
+
+.rating-label {
+  padding-left: 15px;
+  border-left: 1px solid #e2eaee;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.editor-text-field {
+  margin-top: 20px;
+}
+
+.editor-text-field input,
+.editor-text-field textarea {
+  border-color: #dce7ec;
+  border-radius: 13px;
+  color: #193647;
+}
+
+.editor-text-field input {
+  height: 50px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.editor-text-field textarea {
+  min-height: 236px;
+  padding: 15px 16px;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.image-upload-zone--multiple > button {
+  min-height: 104px;
+  border-color: #a9d9ec;
+  border-radius: 14px;
+  background: #f7fcff;
+  transition: border-color .16s ease, background .16s ease, transform .16s ease;
+}
+
+.image-upload-zone--multiple > button:hover {
+  border-color: #54bce9;
+  background: #eefaff;
+  transform: translateY(-1px);
+}
+
+.image-upload-summary {
+  margin-top: 12px;
+}
+
+.image-preview-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.image-preview-tile {
+  overflow: visible;
+  border-radius: 13px;
+}
+
+.image-preview-tile img {
+  overflow: hidden;
+  border-radius: 12px 12px 0 0;
+}
+
+.image-preview-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 8px 9px;
+}
+
+.image-preview-actions button {
+  min-width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 7px;
+  border: 1px solid #dde8ed;
+  border-radius: 8px;
+  background: #fff;
+  color: #58717e;
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.image-preview-actions button:disabled {
+  opacity: .35;
+}
+
+.image-preview-actions button.danger {
+  margin-left: auto;
+  border-color: #f0cfcc;
+  color: #bf534e;
+}
+
+.post-editor-actions {
+  z-index: 20;
+  padding: 14px 32px;
+  border-radius: 0 0 20px 20px;
+  background: rgba(255, 255, 255, .94);
+  box-shadow: 0 -8px 24px rgba(31, 82, 111, .045);
+}
+
+.editor-cancel-button,
+.editor-submit-button {
+  min-height: 46px;
+  border-radius: 12px;
+}
+
+.editor-cancel-button {
+  min-width: 72px;
+  border-color: #dce7ec;
+  color: #5f7581;
+}
+
+.editor-submit-button {
+  min-width: 138px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 20px;
+  border: 1px solid #0284c7;
+  background: linear-gradient(135deg, #0ea5e9, #0284c7);
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(2, 132, 199, .18);
+  font-size: 13px;
+  font-weight: 750;
+  transition: transform .16s ease, box-shadow .16s ease, filter .16s ease;
+}
+
+.editor-submit-button svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+}
+
+.editor-submit-button:hover:not(:disabled) {
+  border-color: #0369a1;
+  background: linear-gradient(135deg, #079bdc, #0369a1);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(2, 132, 199, .24);
+}
+
+.editor-submit-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.editor-submit-button:disabled {
+  border-color: #d8e4ea;
+  background: #d8e4ea;
+  color: #91a2aa;
+  box-shadow: none;
+}
+
+@media (max-width: 760px) {
+  .post-editor-page {
+    padding: 22px 12px 94px;
+  }
+
+  .post-editor-shell {
+    width: 100%;
+  }
+
+  .post-editor-header {
+    margin-bottom: 16px;
+  }
+
+  .post-editor-header h1 {
+    font-size: 25px;
+  }
+
+  .post-editor-form {
+    border-radius: 17px;
+  }
+
+  .editor-section {
+    padding: 22px 18px;
+  }
+
+  .editor-author-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .editor-author-identity,
+  .editor-password-verified {
+    min-height: 76px;
+  }
+
+  .editor-category-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .editor-category-tabs button {
+    width: 100%;
+    padding: 0 10px;
+  }
+
+  .cleanliness-rating {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .rating-label {
+    padding: 0;
+    border: 0;
+  }
+
+  .editor-text-field textarea {
+    min-height: 210px;
+  }
+
+  .image-preview-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .post-editor-actions {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    padding: 11px 14px max(11px, env(safe-area-inset-bottom));
+    border-radius: 0;
+    border-top: 1px solid #dce7ec;
+    background: rgba(255, 255, 255, .97);
+    backdrop-filter: blur(12px);
+  }
+
+  .editor-cancel-button {
+    flex: 0 0 80px;
+  }
+
+  .editor-submit-button {
+    flex: 1;
+  }
+}
+
+@media (max-width: 430px) {
+  .post-editor-header > div span {
+    max-width: 270px;
+  }
+
+  .selected-restroom-card {
+    grid-template-columns: 38px minmax(0, 1fr);
+  }
+
+  .selected-restroom-card > button {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .rating-star-button {
+    width: 34px;
+    height: 36px;
+    font-size: 28px;
+  }
+
+  .image-preview-grid {
+    grid-template-columns: 1fr;
   }
 }
