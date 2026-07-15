@@ -404,9 +404,24 @@ onMounted(() => {
 <template>
   <main class="community-detail-page">
     <div class="page-container community-detail-shell">
-      <button class="community-detail-back" type="button" @click="router.back()">
-        <span aria-hidden="true">←</span>
-        목록으로
+      <button
+        class="community-detail-back"
+        type="button"
+        aria-label="커뮤니티 목록으로 돌아가기"
+        @click="router.back()"
+      >
+        <span class="community-detail-back__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path
+              d="m15 18-6-6 6-6"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </span>
+        <span>리뷰 목록</span>
       </button>
 
       <p v-if="loading" class="state-message">게시글을 불러오는 중입니다.</p>

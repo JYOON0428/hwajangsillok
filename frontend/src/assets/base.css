@@ -4974,19 +4974,60 @@ body {
 }
 
 .community-detail-back {
-  min-height: 39px;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  margin-bottom: 13px;
-  padding: 0 13px;
-  border: 1px solid #d4e2e8;
-  border-radius: 11px;
-  background: #fff;
-  color: #466472;
-  font-size: 12px;
-  font-weight: 850;
+  gap: 9px;
+  margin-bottom: 16px;
+  padding: 4px 2px;
+  border: 0;
+  background: transparent;
+  color: #647b87;
+  font-size: 13px;
+  font-weight: 750;
   cursor: pointer;
+  transition: color .16s ease;
+}
+
+.community-detail-back__icon {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 32px;
+  border: 1px solid #dce7ec;
+  border-radius: 50%;
+  background: #fff;
+  color: #315b6e;
+  box-shadow: 0 4px 14px rgba(30, 88, 116, .07);
+  transition:
+    transform .16s ease,
+    border-color .16s ease,
+    background-color .16s ease,
+    color .16s ease,
+    box-shadow .16s ease;
+}
+
+.community-detail-back__icon svg {
+  width: 17px;
+  height: 17px;
+}
+
+.community-detail-back:hover {
+  color: #087caf;
+}
+
+.community-detail-back:hover .community-detail-back__icon {
+  transform: translateX(-2px);
+  border-color: #9fd7eb;
+  background: #f4fbfe;
+  color: #087caf;
+  box-shadow: 0 6px 16px rgba(30, 110, 148, .11);
+}
+
+.community-detail-back:focus-visible {
+  outline: 3px solid rgba(14, 165, 233, .18);
+  outline-offset: 3px;
+  border-radius: 10px;
 }
 
 .community-detail-card {
@@ -6802,27 +6843,9 @@ body {
   width: min(1120px, calc(100% - 40px));
 }
 
+/* 특정 화장실 리뷰 페이지의 이전 버튼은 게시글 상세의 목록 버튼과 같은 UI 사용 */
 .restroom-review-page__back {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
   margin-bottom: 16px;
-  padding: 8px 2px;
-  border: 0;
-  background: transparent;
-  color: #53707f;
-  font-size: 13px;
-  font-weight: 800;
-  cursor: pointer;
-}
-
-.restroom-review-page__back:hover {
-  color: var(--sky-700);
-}
-
-.restroom-review-page__back span {
-  font-size: 18px;
-  line-height: 1;
 }
 
 .restroom-review-page__error {
@@ -7293,6 +7316,7 @@ body {
 .restroom-review-hero__actions {
   width: 300px;
   flex: 0 0 300px;
+  align-self: flex-end;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 52px;
   align-items: stretch;
