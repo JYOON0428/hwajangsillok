@@ -36,6 +36,10 @@ const pageTitle = computed(() =>
   category.value === '전체' ? '커뮤니티' : getCategoryLabel(category.value),
 )
 
+const heroTitle = computed(() =>
+  category.value === '전체' ? '커뮤니티' : `${getCategoryLabel(category.value)} 커뮤니티`,
+)
+
 const pageDescription = computed(() => {
   if (category.value === '전체') return '장소별 이용 후기와 현장 정보를 한곳에서 확인하세요.'
   if (category.value === '자유게시판') return '화장실 이용과 관련된 자유로운 이야기를 나눠보세요.'
@@ -208,16 +212,9 @@ watch(
       <div class="page-container community-board-hero__inner">
         <div>
           <span>화장실록 커뮤니티</span>
-          <h1>{{ pageTitle }}</h1>
+          <h1>{{ heroTitle }}</h1>
           <p>{{ pageDescription }}</p>
         </div>
-
-        <RouterLink class="community-board-write" :to="writeRoute">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="m14.5 5.5 4 4M4 20l3.8-.8L19.2 7.8a1.4 1.4 0 0 0 0-2l-1-1a1.4 1.4 0 0 0-2 0L4.8 16.2 4 20Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-          글쓰기
-        </RouterLink>
       </div>
     </section>
 
@@ -266,34 +263,43 @@ watch(
               </button>
             </form>
 
-            <div class="community-board-sort" role="tablist" aria-label="게시글 정렬">
-              <button
-                type="button"
-                role="tab"
-                :class="{ active: sort === 'recent' }"
-                :aria-selected="sort === 'recent'"
-                @click="changeSort('recent')"
-              >
-                최신순
-              </button>
-              <button
-                type="button"
-                role="tab"
-                :class="{ active: sort === 'popular' }"
-                :aria-selected="sort === 'popular'"
-                @click="changeSort('popular')"
-              >
-                인기순
-              </button>
-              <button
-                type="button"
-                role="tab"
-                :class="{ active: sort === 'comments' }"
-                :aria-selected="sort === 'comments'"
-                @click="changeSort('comments')"
-              >
-                댓글순
-              </button>
+            <div class="community-board-toolbar__actions">
+              <div class="community-board-sort" role="tablist" aria-label="게시글 정렬">
+                <button
+                  type="button"
+                  role="tab"
+                  :class="{ active: sort === 'recent' }"
+                  :aria-selected="sort === 'recent'"
+                  @click="changeSort('recent')"
+                >
+                  최신순
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  :class="{ active: sort === 'popular' }"
+                  :aria-selected="sort === 'popular'"
+                  @click="changeSort('popular')"
+                >
+                  인기순
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  :class="{ active: sort === 'comments' }"
+                  :aria-selected="sort === 'comments'"
+                  @click="changeSort('comments')"
+                >
+                  댓글순
+                </button>
+              </div>
+
+              <RouterLink class="community-board-toolbar__write" :to="writeRoute">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="m14.5 5.5 4 4M4 20l3.8-.8L19.2 7.8a1.4 1.4 0 0 0 0-2l-1-1a1.4 1.4 0 0 0-2 0L4.8 16.2 4 20Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                글쓰기
+              </RouterLink>
             </div>
           </section>
 

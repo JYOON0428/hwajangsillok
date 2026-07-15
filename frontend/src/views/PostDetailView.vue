@@ -16,16 +16,19 @@ import PostVoteControl from '../components/PostVoteControl.vue'
 const props = defineProps({ id: { type: String, required: true } })
 const route = useRoute()
 const router = useRouter()
+
 const post = ref(null)
 const loading = ref(true)
 const error = ref('')
+const notice = ref('')
+const postManageOpen = ref(false)
+
 const deleteModalOpen = ref(false)
 const deleteBusy = ref(false)
 const deleteError = ref('')
 const editModalOpen = ref(false)
 const editBusy = ref(false)
 const editError = ref('')
-const notice = ref('')
 
 const commentForm = ref({
   nickname: '',
@@ -93,7 +96,6 @@ function getOrCreateCommentNickname() {
   }
 }
 
-
 const images = computed(() => {
   if (!post.value) return []
   if (Array.isArray(post.value.imageUrls) && post.value.imageUrls.length) {
@@ -114,12 +116,17 @@ const commentCount = computed(() => {
   return Math.max(count, comments.value.length)
 })
 
+const commentSubmitDisabled = computed(
+  () =>
+    commentBusy.value ||
+    !commentForm.value.content.trim() ||
+    commentForm.value.password.trim().length < 4,
+)
+
 const isFreeBoard = computed(() => post.value?.category === '자유게시판')
 
 function getCategoryLabel(value) {
-  return value === '일반 게시판' || value === '일반'
-    ? '일반'
-    : value
+  return value === '일반 게시판' || value === '일반' ? '일반' : value
 }
 
 const categoryBadgeLabel = computed(() => getCategoryLabel(post.value?.category))
@@ -133,14 +140,12 @@ const showTypeBadge = computed(() => {
   return true
 })
 
-const showRating = computed(
-  () => !isFreeBoard.value && post.value?.rating != null,
-)
+const showRating = computed(() => !isFreeBoard.value && post.value?.rating != null)
 
 const hasRelatedContext = computed(
-  () => !isFreeBoard.value && Boolean(
-    post.value?.relatedPlace || post.value?.restroomName || showRating.value,
-  ),
+  () =>
+    !isFreeBoard.value &&
+    Boolean(post.value?.relatedPlace || post.value?.restroomName || showRating.value),
 )
 
 const restroomReviewsRoute = computed(() => {
@@ -192,6 +197,11 @@ function commentTimeLabel(comment) {
   return comment.updatedAt ? `${base} · 수정됨` : base
 }
 
+function commentInitial(comment) {
+  const nickname = String(comment?.nickname || '익명').trim()
+  return nickname.charAt(0) || '익'
+}
+
 async function refreshPost() {
   post.value = await getPost(props.id)
 }
@@ -241,7 +251,9 @@ async function confirmEdit(password) {
 }
 
 function validateCommentForm() {
-  if (commentForm.value.password.trim().length < 4) return '비밀번호를 4자 이상 입력해 주세요.'
+  if (commentForm.value.password.trim().length < 4) {
+    return '비밀번호를 4자 이상 입력해 주세요.'
+  }
   if (!commentForm.value.content.trim()) return '댓글 내용을 입력해 주세요.'
   return ''
 }
@@ -263,6 +275,11 @@ async function submitComment() {
       content: '',
     }
     await refreshPost()
+    await nextTick()
+    document.querySelector('.community-comments-list')?.lastElementChild?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'nearest',
+    })
     showNotice('댓글을 등록했습니다.')
   } catch (err) {
     commentError.value = err.message || '댓글을 등록하지 못했습니다.'
@@ -411,12 +428,12 @@ onMounted(() => {
 </script>
 
 <template>
-  <main class="community-detail-page">
+  <main class="community-detail-page" @click="postManageOpen = false">
     <div class="page-container community-detail-shell">
       <button
         class="community-detail-back"
         type="button"
-        aria-label="커뮤니티 목록으로 돌아가기"
+        aria-label="게시글 목록으로 돌아가기"
         @click="router.back()"
       >
         <span class="community-detail-back__icon" aria-hidden="true">
@@ -430,7 +447,7 @@ onMounted(() => {
             />
           </svg>
         </span>
-        <span>커뮤니티 목록</span>
+        <span>게시글 목록</span>
       </button>
 
       <p v-if="loading" class="state-message">게시글을 불러오는 중입니다.</p>
@@ -439,72 +456,18 @@ onMounted(() => {
       <template v-else-if="post">
         <article class="community-detail-card">
           <header class="community-detail-meta">
-            <div class="community-post-card__badges">
-              <span class="category">{{ categoryBadgeLabel }}</span>
-              <span v-if="showTypeBadge" class="type">{{ typeBadgeLabel }}</span>
+            <div class="community-detail-meta__primary">
+              <div class="community-post-card__badges">
+                <span class="category">{{ categoryBadgeLabel }}</span>
+                <span v-if="showTypeBadge" class="type">{{ typeBadgeLabel }}</span>
+              </div>
+              <span class="community-detail-meta__author">
+                {{ post.nickname || '익명 사용자' }} · {{ createdAtLabel }}
+              </span>
             </div>
-            <p>{{ post.nickname || '익명 사용자' }} · {{ createdAtLabel }}</p>
           </header>
 
           <h1 class="community-detail-title">{{ post.title }}</h1>
-
-          <section v-if="hasRelatedContext" class="community-detail-context" aria-label="게시글 관련 정보">
-            <div class="community-detail-context__items">
-              <div v-if="post.relatedPlace" class="community-detail-context__item">
-                <span class="community-detail-context__icon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="none">
-                    <path d="M12 21s7-6.1 7-12a7 7 0 1 0-14 0c0 5.9 7 12 7 12Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
-                    <circle cx="12" cy="9" r="2.4" stroke="currentColor" stroke-width="1.8" />
-                  </svg>
-                </span>
-                <span>
-                  <strong>{{ post.relatedPlace }}</strong>
-                </span>
-              </div>
-
-              <RouterLink
-                v-if="post.restroomName && restroomReviewsRoute"
-                class="community-detail-context__item community-detail-context__item--restroom-link"
-                :to="restroomReviewsRoute"
-                :aria-label="`${post.restroomName} 리뷰 모아보기`"
-              >
-                <span class="community-detail-context__icon restroom" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="none">
-                    <path d="M7 5h10v14H7V5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
-                    <path d="M10 9h4M10 12h4M10 15h2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-                  </svg>
-                </span>
-                <span>
-                  <strong>{{ post.restroomName }}</strong>
-                </span>
-              </RouterLink>
-
-              <div v-else-if="post.restroomName" class="community-detail-context__item">
-                <span class="community-detail-context__icon restroom" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="none">
-                    <path d="M7 5h10v14H7V5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
-                    <path d="M10 9h4M10 12h4M10 15h2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-                  </svg>
-                </span>
-                <span>
-                  <strong>{{ post.restroomName }}</strong>
-                </span>
-              </div>
-            </div>
-
-            <span
-              v-if="showRating"
-              class="community-cleanliness-badge community-cleanliness-badge--detail"
-              :class="ratingClass"
-            >
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path d="m12 2.8 2.8 5.7 6.3.9-4.6 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2-4.6-4.4 6.3-.9L12 2.8Z" fill="currentColor" />
-              </svg>
-              <span>청결도</span>
-              <strong>{{ Number(post.rating).toFixed(1) }}</strong>
-              <small>/ 5</small>
-            </span>
-          </section>
 
           <p class="community-detail-content">{{ post.content }}</p>
 
@@ -515,57 +478,205 @@ onMounted(() => {
             variant="detail"
           />
 
+          <section
+            v-if="hasRelatedContext"
+            class="community-detail-context"
+            aria-label="게시글 관련 화장실 정보"
+          >
+            <RouterLink
+              v-if="post.restroomName && restroomReviewsRoute"
+              class="community-detail-context__place"
+              :to="restroomReviewsRoute"
+              :aria-label="`${post.restroomName} 후기 목록 보기`"
+            >
+              <span class="community-detail-context__icon restroom" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M7 5h10v14H7V5Z"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linejoin="round"
+                  />
+                  <path
+                    d="M10 9h4M10 12h4M10 15h2"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                  />
+                </svg>
+              </span>
+              <span class="community-detail-context__copy">
+                <strong>{{ post.restroomName }}</strong>
+                <small v-if="post.relatedPlace">{{ post.relatedPlace }} 주변</small>
+              </span>
+            </RouterLink>
+
+            <div v-else-if="post.restroomName" class="community-detail-context__place">
+              <span class="community-detail-context__icon restroom" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M7 5h10v14H7V5Z"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linejoin="round"
+                  />
+                  <path
+                    d="M10 9h4M10 12h4M10 15h2"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                  />
+                </svg>
+              </span>
+              <span class="community-detail-context__copy">
+                <strong>{{ post.restroomName }}</strong>
+                <small v-if="post.relatedPlace">{{ post.relatedPlace }} 주변</small>
+              </span>
+            </div>
+
+            <div v-else-if="post.relatedPlace" class="community-detail-context__place">
+              <span class="community-detail-context__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M12 21s7-6.1 7-12a7 7 0 1 0-14 0c0 5.9 7 12 7 12Z"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linejoin="round"
+                  />
+                  <circle cx="12" cy="9" r="2.4" stroke="currentColor" stroke-width="1.8" />
+                </svg>
+              </span>
+              <span class="community-detail-context__copy">
+                <strong>{{ post.relatedPlace }}</strong>
+              </span>
+            </div>
+
+            <span
+              v-if="showRating"
+              class="community-detail-rating"
+              :class="ratingClass"
+              :aria-label="`청결도 ${Number(post.rating).toFixed(1)}점`"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="m12 2.8 2.8 5.7 6.3.9-4.6 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2-4.6-4.4 6.3-.9L12 2.8Z"
+                  fill="currentColor"
+                />
+              </svg>
+              <span>청결도</span>
+              <strong>{{ Number(post.rating).toFixed(1) }}</strong>
+            </span>
+          </section>
+
           <footer class="community-detail-actions">
-            <PostVoteControl
-              :post-id="post.id"
-              :score="post.recommendationCount || 0"
-              :downvotes="post.dislikeCount || 0"
-            />
+            <div class="community-detail-actions__primary">
+              <PostVoteControl
+                :post-id="post.id"
+                :score="post.recommendationCount || 0"
+                :downvotes="post.dislikeCount || 0"
+              />
 
-            <a class="community-action-button" href="#comments">
-              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M5 5h14v11H9l-4 3V5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
-              </svg>
-              댓글 {{ commentCount }}
-            </a>
+              <a class="community-action-button" href="#comments">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path
+                    d="M5 5h14v11H9l-4 3V5Z"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+                댓글 {{ commentCount }}
+              </a>
 
-            <button class="community-action-button" type="button" @click="sharePost">
-              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <circle cx="18" cy="5" r="2.2" stroke="currentColor" stroke-width="1.8" />
-                <circle cx="6" cy="12" r="2.2" stroke="currentColor" stroke-width="1.8" />
-                <circle cx="18" cy="19" r="2.2" stroke="currentColor" stroke-width="1.8" />
-                <path d="m8 11 8-5M8 13l8 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-              </svg>
-              공유
-            </button>
+              <button class="community-action-button" type="button" @click="sharePost">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <circle cx="18" cy="5" r="2.2" stroke="currentColor" stroke-width="1.8" />
+                  <circle cx="6" cy="12" r="2.2" stroke="currentColor" stroke-width="1.8" />
+                  <circle cx="18" cy="19" r="2.2" stroke="currentColor" stroke-width="1.8" />
+                  <path
+                    d="m8 11 8-5M8 13l8 5"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                  />
+                </svg>
+                공유
+              </button>
+            </div>
 
-            <div class="community-detail-manage">
-              <button type="button" @click="editModalOpen = true">수정</button>
-              <button class="danger" type="button" @click="deleteModalOpen = true">삭제</button>
-              <button class="primary" type="button" @click="openAiForPost">AI 관련 정보</button>
+            <div class="community-detail-actions__secondary" @click.stop>
+              <button class="community-detail-ai" type="button" @click="openAiForPost">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path
+                    d="M12 3.5 13.4 8l4.6 1.5-4.6 1.5L12 15.5 10.6 11 6 9.5 10.6 8 12 3.5Z"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    stroke-linejoin="round"
+                  />
+                  <path
+                    d="m18.5 15 .8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2Z"
+                    fill="currentColor"
+                  />
+                </svg>
+                AI에게 물어보기
+              </button>
+
+              <div class="community-detail-more" :class="{ open: postManageOpen }">
+                <button
+                  class="community-detail-more__toggle"
+                  type="button"
+                  aria-label="게시글 관리 메뉴"
+                  :aria-expanded="postManageOpen"
+                  @click="postManageOpen = !postManageOpen"
+                >
+                  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <circle cx="5" cy="12" r="1.8" />
+                    <circle cx="12" cy="12" r="1.8" />
+                    <circle cx="19" cy="12" r="1.8" />
+                  </svg>
+                </button>
+
+                <div v-if="postManageOpen" class="community-detail-more__menu">
+                  <button
+                    type="button"
+                    @click="postManageOpen = false; editModalOpen = true"
+                  >
+                    수정
+                  </button>
+                  <button
+                    class="danger"
+                    type="button"
+                    @click="postManageOpen = false; deleteModalOpen = true"
+                  >
+                    삭제
+                  </button>
+                </div>
+              </div>
             </div>
           </footer>
         </article>
 
         <section id="comments" class="community-comments-panel">
-          <header>
+          <header class="community-comments-heading">
             <div>
-              <span>댓글</span>
-              <strong>{{ commentCount }}</strong>
+              <h2>댓글 <span>{{ commentCount }}</span></h2>
+              <p>이용 경험이나 추가 정보를 남겨보세요.</p>
             </div>
-            <p>이용 경험이나 추가 정보를 남겨보세요.</p>
           </header>
 
           <form class="community-comment-form" @submit.prevent="submitComment">
-            <div class="community-comment-form__credentials">
+            <div class="community-comment-form__topline">
               <div class="community-comment-form__identity">
-                <span>작성자</span>
+                <span class="community-comment-form__avatar" aria-hidden="true">
+                  {{ commentForm.nickname.charAt(0) || '익' }}
+                </span>
                 <div>
                   <strong>{{ commentForm.nickname }}</strong>
                   <small>자동 생성 닉네임</small>
                 </div>
               </div>
-              <label>
+
+              <label class="community-comment-form__password">
                 <span>비밀번호</span>
                 <input
                   v-model="commentForm.password"
@@ -589,9 +700,15 @@ onMounted(() => {
             </label>
 
             <div class="community-comment-form__footer">
-              <p v-if="commentError" class="community-comment-form__error" role="alert">{{ commentError }}</p>
+              <p
+                v-if="commentError"
+                class="community-comment-form__error"
+                role="alert"
+              >
+                {{ commentError }}
+              </p>
               <span v-else>{{ commentForm.content.length }}/500</span>
-              <button type="submit" :disabled="commentBusy">
+              <button type="submit" :disabled="commentSubmitDisabled">
                 {{ commentBusy ? '등록 중...' : '댓글 등록' }}
               </button>
             </div>
@@ -599,47 +716,65 @@ onMounted(() => {
 
           <div v-if="comments.length" class="community-comments-list">
             <article v-for="comment in comments" :key="comment.id" class="community-comment-item">
-              <div class="community-comment-item__header">
-                <div>
-                  <strong>{{ comment.nickname || '익명 사용자' }}</strong>
-                  <time>{{ commentTimeLabel(comment) }}</time>
-                </div>
-                <div class="community-comment-item__actions">
-                  <button type="button" @click="startCommentEdit(comment)">수정</button>
-                  <button class="danger" type="button" @click="openCommentDelete(comment)">삭제</button>
-                </div>
-              </div>
+              <span class="community-comment-item__avatar" aria-hidden="true">
+                {{ commentInitial(comment) }}
+              </span>
 
-              <form
-                v-if="editingCommentId === comment.id"
-                class="community-comment-edit-form"
-                @submit.prevent="submitCommentEdit(comment.id)"
-              >
-                <textarea
-                  v-model="editCommentForm.content"
-                  maxlength="500"
-                  rows="3"
-                  aria-label="수정할 댓글 내용"
-                />
-                <div class="community-comment-edit-form__footer">
-                  <input
-                    v-model="editCommentForm.password"
-                    type="password"
-                    minlength="4"
-                    maxlength="30"
-                    autocomplete="current-password"
-                    placeholder="댓글 비밀번호"
-                    aria-label="댓글 비밀번호"
+              <div class="community-comment-item__body">
+                <div class="community-comment-item__header">
+                  <div>
+                    <strong>{{ comment.nickname || '익명 사용자' }}</strong>
+                    <time>{{ commentTimeLabel(comment) }}</time>
+                  </div>
+
+                  <details class="community-comment-item__more">
+                    <summary aria-label="댓글 관리 메뉴">
+                      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <circle cx="5" cy="12" r="1.7" />
+                        <circle cx="12" cy="12" r="1.7" />
+                        <circle cx="19" cy="12" r="1.7" />
+                      </svg>
+                    </summary>
+                    <div>
+                      <button type="button" @click="startCommentEdit(comment)">수정</button>
+                      <button class="danger" type="button" @click="openCommentDelete(comment)">
+                        삭제
+                      </button>
+                    </div>
+                  </details>
+                </div>
+
+                <form
+                  v-if="editingCommentId === comment.id"
+                  class="community-comment-edit-form"
+                  @submit.prevent="submitCommentEdit(comment.id)"
+                >
+                  <textarea
+                    v-model="editCommentForm.content"
+                    maxlength="500"
+                    rows="3"
+                    aria-label="수정할 댓글 내용"
                   />
-                  <span v-if="editCommentError" role="alert">{{ editCommentError }}</span>
-                  <button type="button" @click="cancelCommentEdit">취소</button>
-                  <button class="primary" type="submit" :disabled="editCommentBusy">
-                    {{ editCommentBusy ? '저장 중...' : '저장' }}
-                  </button>
-                </div>
-              </form>
+                  <div class="community-comment-edit-form__footer">
+                    <input
+                      v-model="editCommentForm.password"
+                      type="password"
+                      minlength="4"
+                      maxlength="30"
+                      autocomplete="current-password"
+                      placeholder="댓글 비밀번호"
+                      aria-label="댓글 비밀번호"
+                    />
+                    <span v-if="editCommentError" role="alert">{{ editCommentError }}</span>
+                    <button type="button" @click="cancelCommentEdit">취소</button>
+                    <button class="primary" type="submit" :disabled="editCommentBusy">
+                      {{ editCommentBusy ? '저장 중...' : '저장' }}
+                    </button>
+                  </div>
+                </form>
 
-              <p v-else>{{ comment.content }}</p>
+                <p v-else>{{ comment.content }}</p>
+              </div>
             </article>
           </div>
 

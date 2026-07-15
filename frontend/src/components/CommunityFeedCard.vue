@@ -111,7 +111,7 @@ const commentPreview = computed(() => {
     : Array.isArray(props.post.comments)
       ? props.post.comments
       : []
-  return source.slice(0, 2)
+  return source.slice(0, 1)
 })
 </script>
 
@@ -130,15 +130,38 @@ const commentPreview = computed(() => {
       </div>
     </header>
 
-    <div class="community-post-card__title-row">
-      <RouterLink :to="detailRoute" class="community-post-card__title-link">
-        <h2>{{ post.title }}</h2>
+    <RouterLink :to="detailRoute" class="community-post-card__title-link">
+      <h2>{{ post.title }}</h2>
+    </RouterLink>
+
+    <RouterLink class="community-post-card__content-link" :to="detailRoute">
+      <p>{{ post.content }}</p>
+    </RouterLink>
+
+    <div v-if="showLocation || showRating" class="community-post-card__context-row">
+      <RouterLink
+        v-if="showLocation"
+        class="community-post-card__location-row"
+        :to="restroomReviewsRoute"
+        :aria-label="hasRestroomReviewLink ? `${primaryLocation} 화장실 후기 보기` : `${primaryLocation} 관련 게시글 보기`"
+      >
+        <span class="community-post-card__location-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M12 21s7-6.1 7-12a7 7 0 1 0-14 0c0 5.9 7 12 7 12Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
+            <circle cx="12" cy="9" r="2.4" stroke="currentColor" stroke-width="1.8" />
+          </svg>
+        </span>
+        <span class="community-post-card__location-copy">
+          <strong>{{ primaryLocation }}</strong>
+          <small v-if="secondaryLocation">{{ secondaryLocation }}</small>
+        </span>
       </RouterLink>
 
       <span
         v-if="showRating"
-        class="community-cleanliness-badge community-cleanliness-badge--compact community-post-card__rating"
+        class="community-post-card__rating-inline"
         :class="ratingClass"
+        aria-label="청결도 평점"
       >
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="m12 2.8 2.8 5.7 6.3.9-4.6 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2-4.6-4.4 6.3-.9L12 2.8Z" fill="currentColor" />
@@ -147,29 +170,6 @@ const commentPreview = computed(() => {
         <strong>{{ Number(post.rating).toFixed(1) }}</strong>
       </span>
     </div>
-
-    <RouterLink class="community-post-card__content-link" :to="detailRoute">
-      <p>{{ post.content }}</p>
-    </RouterLink>
-
-    <RouterLink
-      v-if="showLocation"
-      class="community-post-card__location-row"
-      :to="restroomReviewsRoute"
-      :aria-label="hasRestroomReviewLink ? `${primaryLocation} 리뷰 모아보기` : `${primaryLocation} 관련 게시글 보기`"
-      :class="{ 'community-post-card__location-row--reviews': hasRestroomReviewLink }"
-    >
-      <span class="community-post-card__location-icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none">
-          <path d="M12 21s7-6.1 7-12a7 7 0 1 0-14 0c0 5.9 7 12 7 12Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
-          <circle cx="12" cy="9" r="2.4" stroke="currentColor" stroke-width="1.8" />
-        </svg>
-      </span>
-      <span class="community-post-card__location-copy">
-        <strong>{{ primaryLocation }}</strong>
-        <small v-if="secondaryLocation">{{ secondaryLocation }}</small>
-      </span>
-    </RouterLink>
 
     <ImageCarousel
       v-if="images.length"
@@ -203,21 +203,32 @@ const commentPreview = computed(() => {
       </button>
     </footer>
 
-    <section v-if="commentPreview.length" class="community-comment-preview" aria-label="댓글 미리보기">
-      <div class="community-comment-preview__heading">
-        <strong>댓글</strong>
-        <RouterLink :to="commentsRoute">{{ post.commentCount || commentPreview.length }}개 모두 보기</RouterLink>
-      </div>
-
+    <section v-if="commentPreview.length" class="community-comment-preview" aria-label="최근 댓글 미리보기">
       <RouterLink
         v-for="comment in commentPreview"
         :key="comment.id"
         :to="commentsRoute"
-        class="community-comment-preview__item"
+        class="community-comment-preview__row"
       >
+        <span class="community-comment-preview__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path
+              d="M5 5h14v11H9l-4 3V5Z"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </span>
+
+        <span class="community-comment-preview__label">최근 댓글</span>
         <strong>{{ comment.nickname || '익명 사용자' }}</strong>
         <p>{{ comment.content }}</p>
-        <time v-if="comment.createdAtLabel">{{ comment.createdAtLabel }}</time>
+
+        <span class="community-comment-preview__more">
+          댓글 {{ post.commentCount || commentPreview.length }}개
+          <span aria-hidden="true">›</span>
+        </span>
       </RouterLink>
     </section>
   </article>
