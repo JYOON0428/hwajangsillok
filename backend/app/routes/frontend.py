@@ -545,6 +545,9 @@ async def get_location_reviews(restroom_id: int, sort: str = "recent", db: Sessi
         reviews.append(
             {
                 "id": f"review-{review.review_id}",
+                "reviewId": review.review_id,
+                "post_id": review.post_id,
+                "postId": review.post_id,
                 "title": "청결도 리뷰",
                 "cleanliness": review.rating,
                 "content": review.content or "리뷰 내용이 없습니다.",
@@ -560,6 +563,8 @@ async def get_location_reviews(restroom_id: int, sort: str = "recent", db: Sessi
         reviews.append(
             {
                 "id": f"post-{post.post_id}",
+                "postId": post.post_id,
+                "post_id": post.post_id,
                 "title": post.title,
                 "cleanliness": post.rating,
                 "content": post.content,
@@ -664,6 +669,19 @@ async def create_post(request: Request, db: Session = Depends(get_db)):
     db.add(post)
     db.commit()
     db.refresh(post)
+    # If the client created this post from an existing review, link them
+    review_id = payload.get("reviewId") or payload.get("review_id")
+    if review_id not in (None, "", "null"):
+        try:
+            rid = int(review_id)
+            review_obj = db.query(Review).filter(Review.review_id == rid).first()
+            if review_obj:
+                review_obj.post_id = post.post_id
+                db.commit()
+        except Exception:
+            # ignore invalid review id or DB errors here; post was already created
+            pass
+
     return _normalize_post(post, _anonymous_name_for_post(db, post))
 
 

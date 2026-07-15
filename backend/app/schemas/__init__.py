@@ -130,6 +130,7 @@ class ReviewCreate(ReviewBase):
 
 class ReviewResponse(ReviewBase):
     review_id: int
+    post_id: Optional[int] = None
     created_at: datetime
     
     class Config:
