@@ -9503,3 +9503,703 @@ body {
     align-items: flex-end;
   }
 }
+
+/* =========================================================
+   Restroom review hub aligned with home design system
+   ========================================================= */
+
+.restroom-review-page--home-theme {
+  position: relative;
+  min-height: calc(100vh - 72px);
+  padding: 26px 0 88px;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, #f7fcff 0, #f7fcff 300px, #ffffff 620px, #ffffff 100%);
+  color: #102a3a;
+}
+
+.restroom-review-page--home-theme::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 360px;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(14, 165, 233, .035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(14, 165, 233, .035) 1px, transparent 1px),
+    radial-gradient(circle at 86% 0%, rgba(125, 211, 252, .18), transparent 34%);
+  background-size: 40px 40px, 40px 40px, auto;
+  mask-image: linear-gradient(to bottom, #000 0%, transparent 94%);
+}
+
+.restroom-review-page--home-theme .restroom-review-page__shell {
+  position: relative;
+  z-index: 1;
+  width: min(1160px, calc(100% - 40px));
+}
+
+.restroom-review-page--home-theme .restroom-review-page__back {
+  margin-bottom: 18px;
+  color: #476776;
+  box-shadow: none;
+}
+
+.restroom-review-page--home-theme .community-detail-back__icon {
+  border-color: #dce9ef;
+  background: rgba(255, 255, 255, .88);
+  box-shadow: 0 5px 14px rgba(29, 89, 118, .05);
+}
+
+.restroom-review-hero--compact {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 28px;
+  padding: 28px 30px;
+  border: 1px solid #dcebf2;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, .92);
+  box-shadow: 0 14px 36px rgba(23, 79, 108, .06);
+  backdrop-filter: blur(10px);
+}
+
+.restroom-review-hero--compact::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: linear-gradient(120deg, rgba(239, 249, 255, .82), rgba(255, 255, 255, .92) 55%);
+}
+
+.restroom-review-hero--compact .restroom-review-hero__eyebrow {
+  margin-bottom: 7px;
+  color: #0284c7;
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: -.1px;
+}
+
+.restroom-review-hero--compact h1 {
+  margin: 0;
+  max-width: 780px;
+  color: #102a3a;
+  font-size: clamp(28px, 3vw, 34px);
+  font-weight: 800;
+  line-height: 1.28;
+  letter-spacing: -1.25px;
+}
+
+.restroom-review-hero--compact .restroom-review-hero__metrics {
+  margin-top: 14px;
+  gap: 8px 13px;
+  color: #6b7f8c;
+  font-size: 12px;
+}
+
+.restroom-review-hero--compact .restroom-review-hero__metrics > strong {
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.restroom-review-hero__location-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin-top: 11px;
+  color: #6c808c;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.restroom-review-hero__location-meta span + span {
+  position: relative;
+}
+
+.restroom-review-hero__location-meta span + span::before {
+  content: "";
+  position: absolute;
+  left: -9px;
+  top: 50%;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #b6c6ce;
+  transform: translateY(-50%);
+}
+
+.restroom-review-hero--compact .restroom-review-hero__actions {
+  width: auto;
+  min-width: 0;
+  flex: none;
+  align-self: end;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.restroom-review-hero--compact .restroom-review-primary-action,
+.restroom-review-hero--compact .restroom-review-share-action {
+  min-height: 44px;
+  border-radius: 12px;
+}
+
+.restroom-review-hero--compact .restroom-review-primary-action {
+  width: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 17px;
+  border: 0;
+  background: linear-gradient(135deg, #0ea5e9, #0284c7);
+  color: #fff;
+  box-shadow: 0 10px 22px rgba(2, 132, 199, .18);
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.restroom-review-hero--compact .restroom-review-primary-action:hover {
+  background: linear-gradient(135deg, #089bdc, #0275b4);
+  box-shadow: 0 13px 25px rgba(2, 132, 199, .24);
+  transform: translateY(-1px);
+}
+
+.restroom-review-hero--compact .restroom-review-primary-action svg {
+  width: 17px;
+  height: 17px;
+}
+
+.restroom-review-hero--compact .restroom-review-share-action {
+  width: 44px;
+  min-width: 44px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid #cfe5ef;
+  background: #fff;
+  color: #087caf;
+  box-shadow: none;
+}
+
+.restroom-review-hero--compact .restroom-review-share-action:hover {
+  border-color: #8fcfe8;
+  background: #f2fbff;
+  transform: translateY(-1px);
+}
+
+.restroom-review-layout--refined {
+  display: grid;
+  grid-template-columns: minmax(330px, .9fr) minmax(0, 1.55fr);
+  align-items: start;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.restroom-review-place-panel {
+  position: sticky;
+  top: 92px;
+}
+
+.restroom-review-place-card {
+  overflow: hidden;
+  border: 1px solid #dfeaf0;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 10px 28px rgba(27, 82, 111, .045);
+}
+
+.restroom-review-place-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 20px 20px 17px;
+  border-bottom: 1px solid #eaf0f3;
+  background: linear-gradient(180deg, #fbfdfe, #fff);
+}
+
+.restroom-review-place-card__header span,
+.restroom-review-feed__title-block > span {
+  display: block;
+  margin-bottom: 4px;
+  color: #0284c7;
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.restroom-review-place-card__header h2 {
+  margin: 0;
+  color: #173645;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -.4px;
+}
+
+.restroom-review-place-card__header small {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: #8b9aa2;
+  font-size: 9px;
+}
+
+.restroom-review-place-card__section {
+  padding: 18px 20px;
+}
+
+.restroom-review-place-card__section + .restroom-review-place-card__section {
+  border-top: 1px solid #eaf0f3;
+}
+
+.restroom-review-place-card__section h3 {
+  margin: 0;
+  color: #294653;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.restroom-review-place-card .restroom-review-facilities {
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.restroom-review-place-card .restroom-review-facilities span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 30px;
+  padding: 0 9px;
+  border: 1px solid #d4ebf6;
+  border-radius: 999px;
+  background: #f0f9ff;
+  color: #0878ad;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.restroom-review-place-card .restroom-review-facilities svg {
+  width: 13px;
+  height: 13px;
+}
+
+.restroom-review-place-card__empty,
+.restroom-review-place-card__notice {
+  margin: 11px 0 0;
+  color: #7d9099;
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+.restroom-review-place-card__notice {
+  color: #94a2a9;
+}
+
+.restroom-review-place-card__map-section {
+  padding: 0;
+}
+
+.restroom-review-place-card .restroom-review-map-card__heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px 14px;
+  border-bottom: 1px solid #eaf0f3;
+}
+
+.restroom-review-place-card .restroom-review-map-card__heading > div {
+  display: block;
+  min-width: 0;
+}
+
+.restroom-review-place-card .restroom-review-map-card__heading span {
+  display: block;
+  margin-bottom: 4px;
+  color: #0284c7;
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.restroom-review-place-card .restroom-review-map-card__heading h3 {
+  overflow: hidden;
+  margin: 0;
+  color: #294653;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.45;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.restroom-review-place-card .restroom-review-map-card__heading button {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 5px 0;
+  border: 0;
+  background: transparent;
+  color: #087caf;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.restroom-review-place-card .restroom-review-map-card__heading button:hover {
+  color: #055f89;
+}
+
+.restroom-review-place-card .restroom-review-map-card__heading button svg {
+  width: 14px;
+  height: 14px;
+}
+
+.restroom-review-place-card .restroom-review-map-card__canvas,
+.restroom-review-place-card .restroom-map-panel {
+  min-height: 290px;
+  height: 290px;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.restroom-review-place-card .map-color-legend,
+.restroom-review-place-card .mobile-map-summary,
+.restroom-review-place-card .map-current-location {
+  display: none;
+}
+
+.restroom-review-feed--flat {
+  overflow: hidden;
+  border: 1px solid #dfeaf0;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 10px 28px rgba(27, 82, 111, .045);
+}
+
+.restroom-review-feed--flat .restroom-review-feed__header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 18px;
+  padding: 20px 22px 16px;
+  border-bottom: 0;
+}
+
+.restroom-review-feed__title-block h2 {
+  margin: 0;
+  color: #173645;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -.55px;
+}
+
+.restroom-review-feed__title-block p {
+  margin: 6px 0 0;
+  color: #81929a;
+  font-size: 11px;
+}
+
+.restroom-review-feed--flat .restroom-review-feed__controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.restroom-review-feed--flat .restroom-review-feed__search {
+  min-width: 220px;
+  min-height: 38px;
+  background: #fbfdfe;
+}
+
+.restroom-review-feed__summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 22px;
+  border-top: 1px solid #edf2f5;
+  border-bottom: 1px solid #edf2f5;
+  background: #fbfdfe;
+  color: #82939c;
+  font-size: 10px;
+}
+
+.restroom-review-feed__summary-row strong {
+  color: #385665;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.restroom-review-feed--flat .restroom-review-feed__list {
+  display: block;
+  padding: 0 20px;
+}
+
+.restroom-review-card--flat {
+  padding: 20px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+}
+
+.restroom-review-card--flat + .restroom-review-card--flat {
+  border-top: 1px solid #edf2f5;
+}
+
+.restroom-review-card--flat:hover,
+.restroom-review-card--flat:focus-visible {
+  border-color: #edf2f5;
+  background: #fbfdfe;
+  box-shadow: 0 0 0 10px #fbfdfe;
+  transform: none;
+  outline: none;
+}
+
+.restroom-review-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.restroom-review-card__title-group {
+  min-width: 0;
+}
+
+.restroom-review-card--flat h4 {
+  margin: 0;
+  color: #173645;
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.45;
+  letter-spacing: -.25px;
+}
+
+.restroom-review-card--flat .review-card-meta {
+  margin-top: 7px;
+  gap: 5px 10px;
+  color: #82939c;
+  font-size: 10px;
+}
+
+.restroom-review-card--flat .review-card-meta strong {
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.restroom-review-card__chevron {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #9aabb3;
+  transition: color .16s ease, background-color .16s ease, transform .16s ease;
+}
+
+.restroom-review-card__chevron svg {
+  width: 16px;
+  height: 16px;
+}
+
+.restroom-review-card--flat:hover .restroom-review-card__chevron,
+.restroom-review-card--flat:focus-visible .restroom-review-card__chevron {
+  background: #eaf8ff;
+  color: #0284c7;
+  transform: translateX(2px);
+}
+
+.restroom-review-card--flat > p {
+  max-width: 760px;
+  margin: 12px 0 0;
+  color: #536f7e;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.restroom-review-card--flat .review-image-grid {
+  margin-top: 14px;
+  border-radius: 12px;
+}
+
+.restroom-review-contribute {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin: 0 20px 20px;
+  padding: 16px 17px;
+  border: 1px solid #d8ebf4;
+  border-radius: 13px;
+  background: linear-gradient(135deg, #f5fbff, #fbfdfe);
+}
+
+.restroom-review-contribute strong {
+  color: #244655;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.restroom-review-contribute p {
+  margin: 5px 0 0;
+  color: #7b8f99;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.restroom-review-contribute button {
+  min-height: 38px;
+  flex: 0 0 auto;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 10px;
+  background: #173f53;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.restroom-review-contribute button:hover {
+  background: #102f40;
+}
+
+@media (max-width: 940px) {
+  .restroom-review-hero--compact {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .restroom-review-hero--compact .restroom-review-hero__actions {
+    justify-self: start;
+  }
+
+  .restroom-review-layout--refined {
+    grid-template-columns: 1fr;
+  }
+
+  .restroom-review-place-panel {
+    position: static;
+  }
+
+  .restroom-review-place-card {
+    display: grid;
+    grid-template-columns: minmax(280px, .8fr) minmax(0, 1.2fr);
+  }
+
+  .restroom-review-place-card__header {
+    grid-column: 1 / -1;
+  }
+
+  .restroom-review-place-card__map-section {
+    border-top: 0 !important;
+    border-left: 1px solid #eaf0f3;
+  }
+}
+
+@media (max-width: 720px) {
+  .restroom-review-page--home-theme {
+    padding: 18px 0 64px;
+  }
+
+  .restroom-review-page--home-theme .restroom-review-page__shell {
+    width: min(100% - 28px, 1160px);
+  }
+
+  .restroom-review-hero--compact {
+    gap: 20px;
+    padding: 22px 19px;
+    border-radius: 15px;
+  }
+
+  .restroom-review-hero--compact h1 {
+    font-size: clamp(24px, 8vw, 28px);
+  }
+
+  .restroom-review-hero__location-meta {
+    display: grid;
+    gap: 4px;
+  }
+
+  .restroom-review-hero__location-meta span + span::before {
+    display: none;
+  }
+
+  .restroom-review-hero--compact .restroom-review-hero__actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 44px;
+  }
+
+  .restroom-review-place-card {
+    display: block;
+  }
+
+  .restroom-review-place-card__map-section {
+    border-left: 0;
+    border-top: 1px solid #eaf0f3 !important;
+  }
+
+  .restroom-review-place-card .restroom-review-map-card__canvas,
+  .restroom-review-place-card .restroom-map-panel {
+    min-height: 240px;
+    height: 240px;
+  }
+
+  .restroom-review-feed--flat .restroom-review-feed__header {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+    padding: 18px 17px 14px;
+  }
+
+  .restroom-review-feed--flat .restroom-review-feed__controls {
+    width: 100%;
+  }
+
+  .restroom-review-feed--flat .restroom-review-feed__search {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .restroom-review-feed__summary-row {
+    padding: 10px 17px;
+  }
+
+  .restroom-review-feed--flat .restroom-review-feed__list {
+    padding: 0 17px;
+  }
+
+  .restroom-review-card--flat {
+    padding: 18px 0;
+  }
+
+  .restroom-review-contribute {
+    align-items: flex-start;
+    margin: 0 17px 17px;
+  }
+}
+
+@media (max-width: 480px) {
+  .restroom-review-feed--flat .restroom-review-feed__controls {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .restroom-review-feed--flat .restroom-review-feed__controls select {
+    width: 100%;
+  }
+
+  .restroom-review-contribute {
+    display: grid;
+  }
+
+  .restroom-review-contribute button {
+    width: 100%;
+  }
+}

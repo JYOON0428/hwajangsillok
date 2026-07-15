@@ -29,7 +29,7 @@ const filteredReviews = computed(() => {
   if (!keyword) return reviews.value
 
   return reviews.value.filter((review) =>
-    [review.title, review.content]
+    [review.title, review.content, review.nickname]
       .filter(Boolean)
       .join(' ')
       .toLowerCase()
@@ -39,6 +39,12 @@ const filteredReviews = computed(() => {
 
 const reviewCount = computed(() =>
   Math.max(Number(restroom.value?.reviewCount || 0), reviews.value.length),
+)
+
+const shouldShowSearch = computed(() => reviews.value.length > 5)
+const shouldShowSort = computed(() => reviews.value.length > 1)
+const shouldShowContributeCard = computed(
+  () => reviews.value.length > 0 && reviews.value.length < 5,
 )
 
 const selectedRestroomId = computed(() => {
@@ -58,13 +64,17 @@ const mapRestrooms = computed(() => {
   ]
 })
 
-const facilities = computed(() => ({
-  diaperTable: Boolean(restroom.value?.facilities?.diaperTable),
-  accessible: Boolean(restroom.value?.facilities?.accessible),
-  emergencyBell: Boolean(restroom.value?.facilities?.emergencyBell),
-  entranceCctv: Boolean(restroom.value?.facilities?.entranceCctv),
-  open24Hours: Boolean(restroom.value?.facilities?.open24Hours),
-}))
+const facilityItems = computed(() => {
+  const source = restroom.value?.facilities || {}
+
+  return [
+    { key: 'diaperTable', label: '기저귀 교환대', enabled: Boolean(source.diaperTable) },
+    { key: 'accessible', label: '장애인용 시설', enabled: Boolean(source.accessible) },
+    { key: 'emergencyBell', label: '비상벨', enabled: Boolean(source.emergencyBell) },
+    { key: 'entranceCctv', label: '입구 CCTV', enabled: Boolean(source.entranceCctv) },
+    { key: 'open24Hours', label: '24시간 개방', enabled: Boolean(source.open24Hours) },
+  ].filter((item) => item.enabled)
+})
 
 function ratingClass(rating) {
   if (rating == null) return 'rating-none'
@@ -158,6 +168,19 @@ function writeReview() {
   })
 }
 
+function openMapSearch() {
+  if (!restroom.value) return
+
+  router.push({
+    name: 'search',
+    query: {
+      q: restroom.value.name,
+      radius: 1000,
+      restroomId: restroom.value.id || props.id,
+    },
+  })
+}
+
 function openReviewPost(review) {
   const postId = Number(
     review?.postId
@@ -166,19 +189,14 @@ function openReviewPost(review) {
       ?? review?.community_post_id,
   )
 
-  if (postId) {
-    router.push({
-      name: 'post-detail',
-      params: { id: postId },
-    })
+  if (!Number.isFinite(postId) || postId <= 0) {
+    showNotice('연결된 원문 게시글 정보를 찾을 수 없습니다.')
     return
   }
 
   router.push({
-    name: 'community',
-    query: {
-      keyword: review?.title || restroom.value?.name || '',
-    },
+    name: 'post-detail',
+    params: { id: String(postId) },
   })
 }
 
@@ -245,12 +263,12 @@ onMounted(loadPage)
 </script>
 
 <template>
-  <main class="restroom-review-page">
+  <main class="restroom-review-page restroom-review-page--home-theme">
     <div class="page-container restroom-review-page__shell">
       <button
         class="community-detail-back restroom-review-page__back"
         type="button"
-        aria-label="이전 화면으로 돌아가기"
+        aria-label="뒤로 가기"
         @click="router.back()"
       >
         <span class="community-detail-back__icon" aria-hidden="true">
@@ -264,7 +282,7 @@ onMounted(loadPage)
             />
           </svg>
         </span>
-        <span>이전 화면</span>
+        <span>뒤로</span>
       </button>
 
       <p v-if="loading" class="state-message">화장실 리뷰를 불러오는 중입니다.</p>
@@ -276,7 +294,7 @@ onMounted(loadPage)
       </section>
 
       <template v-else-if="restroom">
-        <header class="restroom-review-hero">
+        <header class="restroom-review-hero restroom-review-hero--compact">
           <div class="restroom-review-hero__main">
             <span class="restroom-review-hero__eyebrow">화장실 리뷰 모아보기</span>
             <h1>{{ restroom.name }}</h1>
@@ -295,26 +313,19 @@ onMounted(loadPage)
               </span>
             </div>
 
-            <p v-if="restroom.address" class="restroom-review-hero__address">
-              {{ restroom.address }}
-            </p>
-            <p v-if="restroom.openingHours" class="restroom-review-hero__hours">
-              운영시간 {{ restroom.openingHours }}
-            </p>
+            <div class="restroom-review-hero__location-meta">
+              <span v-if="restroom.address">{{ restroom.address }}</span>
+              <span v-if="restroom.openingHours">운영시간 {{ restroom.openingHours }}</span>
+            </div>
           </div>
 
           <div class="restroom-review-hero__actions">
             <button class="restroom-review-primary-action" type="button" @click="writeReview">
-              <span class="restroom-review-primary-action__icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none">
-                  <path d="M4 20h4l10.7-10.7a2.1 2.1 0 0 0-3-3L5 17v3Z" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" />
-                  <path d="m14.5 7.5 3 3" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" />
-                </svg>
-              </span>
-              <span class="restroom-review-primary-action__copy">
-                <strong>리뷰 작성</strong>
-                <small>이용 경험을 남겨주세요</small>
-              </span>
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M4 20h4l10.7-10.7a2.1 2.1 0 0 0-3-3L5 17v3Z" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" />
+                <path d="m14.5 7.5 3 3" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" />
+              </svg>
+              <span>리뷰 작성</span>
             </button>
 
             <button
@@ -334,57 +345,76 @@ onMounted(loadPage)
           </div>
         </header>
 
-        <div class="restroom-review-layout">
-          <aside class="restroom-review-summary">
-            <section>
-              <div class="restroom-review-summary__heading">
-                <h2>시설 정보</h2>
+        <div class="restroom-review-layout restroom-review-layout--refined">
+          <aside class="restroom-review-place-panel">
+            <section class="restroom-review-place-card">
+              <header class="restroom-review-place-card__header">
+                <div>
+                  <span>장소 정보</span>
+                  <h2>시설과 위치</h2>
+                </div>
                 <small v-if="restroom.dataReferenceDate">
                   기준일 {{ restroom.dataReferenceDate }}
                 </small>
-              </div>
+              </header>
 
-              <div class="restroom-review-facilities">
-                <span :class="{ unavailable: !facilities.diaperTable }">기저귀 교환대</span>
-                <span :class="{ unavailable: !facilities.accessible }">장애인용 시설</span>
-                <span :class="{ unavailable: !facilities.emergencyBell }">비상벨</span>
-                <span :class="{ unavailable: !facilities.entranceCctv }">입구 CCTV</span>
-                <span :class="{ unavailable: !facilities.open24Hours }">24시간 개방</span>
-              </div>
-
-              <p>공공데이터 기준 정보이며 실제 현장 상황과 다를 수 있습니다.</p>
-            </section>
-
-            <section class="restroom-review-map-card">
-              <div class="restroom-review-map-card__heading">
-                <div>
-                  <span>위치</span>
-                  <h2>지도에서 확인</h2>
+              <div class="restroom-review-place-card__section">
+                <h3>제공 시설</h3>
+                <div v-if="facilityItems.length" class="restroom-review-facilities">
+                  <span v-for="item in facilityItems" :key="item.key">
+                    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                      <path d="m5 10 3 3 7-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    {{ item.label }}
+                  </span>
                 </div>
-                <small v-if="restroom.address">{{ restroom.address }}</small>
+                <p v-else class="restroom-review-place-card__empty">
+                  확인된 편의시설 정보가 없습니다.
+                </p>
+                <p class="restroom-review-place-card__notice">
+                  공공데이터 기준 정보이며 실제 현장 상황과 다를 수 있습니다.
+                </p>
               </div>
 
-              <div class="restroom-review-map-card__canvas">
-                <RestroomMapPanel
-                  :restrooms="mapRestrooms"
-                  :selected-id="selectedRestroomId"
-                  :selected-only="true"
-                  :show-research-button="false"
-                />
+              <div class="restroom-review-place-card__section restroom-review-place-card__map-section">
+                <div class="restroom-review-map-card__heading">
+                  <div>
+                    <span>위치</span>
+                    <h3>{{ restroom.address || '주소 정보 없음' }}</h3>
+                  </div>
+                  <button type="button" @click="openMapSearch">
+                    큰 지도 보기
+                    <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                      <path d="m8 5 5 5-5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                  </button>
+                </div>
+
+                <div class="restroom-review-map-card__canvas">
+                  <RestroomMapPanel
+                    :restrooms="mapRestrooms"
+                    :selected-id="selectedRestroomId"
+                    :selected-only="true"
+                    :show-research-button="false"
+                  />
+                </div>
               </div>
             </section>
           </aside>
 
-          <section class="restroom-review-feed" aria-label="이용자 리뷰 목록">
+          <section class="restroom-review-feed restroom-review-feed--flat" aria-label="이용자 리뷰 목록">
             <header class="restroom-review-feed__header">
-              <div>
+              <div class="restroom-review-feed__title-block">
                 <span>이용자 리뷰</span>
-                <h2>{{ restroom.name }} 후기</h2>
-                <p>{{ filteredReviews.length }}개 표시</p>
+                <h2>이 화장실을 이용한 후기</h2>
+                <p>실제 이용 경험과 최신 상태를 확인하세요.</p>
               </div>
 
-              <div class="restroom-review-feed__controls">
-                <label class="restroom-review-feed__search">
+              <div
+                v-if="shouldShowSearch || shouldShowSort"
+                class="restroom-review-feed__controls"
+              >
+                <label v-if="shouldShowSearch" class="restroom-review-feed__search">
                   <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
                     <circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="1.8" />
                     <path d="m16 16 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
@@ -397,13 +427,18 @@ onMounted(loadPage)
                   />
                 </label>
 
-                <select v-model="reviewSort" aria-label="리뷰 정렬">
+                <select v-if="shouldShowSort" v-model="reviewSort" aria-label="리뷰 정렬">
                   <option value="recent">최신순</option>
                   <option value="cleanlinessHigh">청결도 높은 순</option>
                   <option value="cleanlinessLow">청결도 낮은 순</option>
                 </select>
               </div>
             </header>
+
+            <div class="restroom-review-feed__summary-row">
+              <strong>{{ filteredReviews.length }}개 후기</strong>
+              <span v-if="reviewKeyword">검색 결과</span>
+            </div>
 
             <p v-if="reviewsLoading" class="search-state">리뷰를 불러오는 중입니다.</p>
 
@@ -422,10 +457,20 @@ onMounted(loadPage)
                 v-for="review in filteredReviews"
                 :key="review.id"
                 :review="review"
-                :distance-meters="restroom.distanceMeters ?? null"
+                :show-distance="false"
+                :show-chevron="true"
+                variant="flat"
                 @open-post="openReviewPost"
               />
             </div>
+
+            <section v-if="shouldShowContributeCard" class="restroom-review-contribute">
+              <div>
+                <strong>최근 이용 경험이 있나요?</strong>
+                <p>청결도와 편의시설 정보를 남기면 다음 이용자에게 도움이 됩니다.</p>
+              </div>
+              <button type="button" @click="writeReview">리뷰 작성</button>
+            </section>
           </section>
         </div>
       </template>
