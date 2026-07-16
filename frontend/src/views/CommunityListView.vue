@@ -10,7 +10,7 @@ const route = useRoute()
 const router = useRouter()
 
 const allowedCategories = ['전체', '관광지', '문화시설', '축제·공연', '쇼핑', '일반 게시판', '자유게시판']
-const allowedSorts = ['recent', 'popular', 'comments']
+const allowedSorts = ['recent', 'popular']
 const pageSize = 10
 
 const category = ref('전체')
@@ -283,15 +283,6 @@ watch(
                 >
                   인기순
                 </button>
-                <button
-                  type="button"
-                  role="tab"
-                  :class="{ active: sort === 'comments' }"
-                  :aria-selected="sort === 'comments'"
-                  @click="changeSort('comments')"
-                >
-                  댓글순
-                </button>
               </div>
 
               <RouterLink class="community-board-toolbar__write" :to="writeRoute">
@@ -351,8 +342,7 @@ watch(
               </svg>
             </span>
             <strong>조건에 맞는 게시글이 없습니다.</strong>
-            <p>검색어를 바꾸거나 첫 리뷰를 작성해보세요.</p>
-            <RouterLink :to="writeRoute">리뷰 쓰기</RouterLink>
+            <p>검색어나 카테고리를 변경해보세요.</p>
           </div>
 
           <PaginationBar

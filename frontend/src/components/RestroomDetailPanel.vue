@@ -1,4 +1,3 @@
-
 <script setup>
 import { computed } from 'vue'
 import RestroomReviewCard from './RestroomReviewCard.vue'
@@ -152,7 +151,7 @@ function operationStatus(restroom) {
       <section class="reviews-section reviews-section--recent">
         <div class="reviews-heading reviews-heading--recent">
           <div>
-            <h3>최근 리뷰</h3>
+            <h3>이용자 리뷰</h3>
             <span>{{ restroom.reviewCount ?? reviews.length }}개</span>
           </div>
           <button
