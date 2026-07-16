@@ -353,6 +353,20 @@ async function confirmCommentDelete(password) {
   }
 }
 
+function goToPostList() {
+  const currentCategory = post.value?.category
+  const category = currentCategory === '일반'
+    ? '일반 게시판'
+    : currentCategory
+
+  router.push({
+    name: 'community',
+    query: category && category !== '전체'
+      ? { category }
+      : {},
+  })
+}
+
 function showNotice(message) {
   notice.value = message
   window.clearTimeout(noticeTimer)
@@ -434,7 +448,7 @@ onMounted(() => {
         class="community-detail-back"
         type="button"
         aria-label="게시글 목록으로 돌아가기"
-        @click="router.back()"
+        @click="goToPostList"
       >
         <span class="community-detail-back__icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none">
@@ -681,14 +695,14 @@ onMounted(() => {
               </div>
 
               <label class="community-comment-form__password">
-                <span>비밀번호</span>
+                <span class="sr-only">비밀번호</span>
                 <input
                   v-model="commentForm.password"
                   type="password"
                   minlength="4"
                   maxlength="30"
                   autocomplete="new-password"
-                  placeholder="수정·삭제용 4자 이상"
+                  placeholder="비밀번호 4자 이상 입력"
                 />
               </label>
             </div>

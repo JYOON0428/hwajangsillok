@@ -8606,7 +8606,7 @@ body {
 
 .community-comment-preview__label {
   color: #718690;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -8615,7 +8615,7 @@ body {
   max-width: 140px;
   overflow: hidden;
   color: #405e6d;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 650;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -8626,7 +8626,7 @@ body {
   overflow: hidden;
   margin: 0;
   color: #748791;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 400;
   line-height: 1.45;
   text-overflow: ellipsis;
@@ -8638,13 +8638,13 @@ body {
   align-items: center;
   gap: 3px;
   color: #087caf;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 650;
   white-space: nowrap;
 }
 
 .community-comment-preview__more span {
-  font-size: 15px;
+  font-size: 17px;
   line-height: 1;
 }
 
@@ -8691,7 +8691,7 @@ body {
 
   .community-comment-preview__more::before {
     content: "전체 보기";
-    font-size: 10px;
+    font-size: 12px;
   }
 }
 
@@ -12689,5 +12689,834 @@ body {
   .map-search-toolbar .map-search-input-wrap {
     width: auto;
     flex: 1;
+  }
+}
+
+/* =========================================================
+   Chatbot, community typography, comment password alignment,
+   and map detail hierarchy refinement — 2026-07-16
+   ========================================================= */
+
+/* Chatbot: use the same white / sky-blue / navy language as the main UI. */
+.chat-window {
+  width: 390px;
+  height: 540px;
+  border: 1px solid #dbe8ee;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 18px 48px rgba(23, 63, 83, .18);
+}
+
+.chat-window > .chat-window__header {
+  min-height: 68px;
+  padding: 13px 14px;
+  border-bottom: 1px solid #e4eef3;
+  background: linear-gradient(135deg, #f4fbff 0%, #ebf8fe 100%);
+  color: #173746;
+}
+
+.chat-window__brand {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.chat-window__brand-icon {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 38px;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #22afea, #087ab6);
+  color: #fff;
+  box-shadow: 0 7px 16px rgba(2, 132, 199, .18);
+}
+
+.chat-window__brand-icon svg {
+  width: 21px;
+  height: 21px;
+}
+
+.chat-window__brand strong {
+  display: block;
+  color: #173746;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
+.chat-window__brand small,
+.chat-window header small {
+  display: block;
+  margin-top: 2px;
+  color: #748a96;
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.chat-window .chat-window__close {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #617a87;
+  font-size: 21px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.chat-window .chat-window__close:hover {
+  background: #e5f5fc;
+  color: #087caf;
+}
+
+.chat-history {
+  padding: 16px;
+  background: #f8fcfe;
+}
+
+.chat-message {
+  max-width: 88%;
+  margin-bottom: 12px;
+  padding: 11px 13px;
+  border-radius: 14px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.chat-message.assistant {
+  border: 1px solid #dce9ef;
+  border-top-left-radius: 5px;
+  background: #fff;
+  color: #315566;
+  box-shadow: 0 3px 10px rgba(37, 82, 105, .04);
+}
+
+.chat-message.user {
+  margin-left: auto;
+  border: 0;
+  border-top-right-radius: 5px;
+  background: #17465d;
+  color: #fff;
+}
+
+.chat-location-list {
+  display: grid;
+  gap: 0;
+  margin-top: 10px;
+  overflow: hidden;
+  border: 1px solid #deebf1;
+  border-radius: 12px;
+  background: #fbfeff;
+}
+
+.chat-location-list .chat-location-card {
+  width: 100%;
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 11px;
+  border: 0;
+  border-bottom: 1px solid #e6eff3;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color .16s ease, color .16s ease;
+}
+
+.chat-location-list .chat-location-card:last-child {
+  border-bottom: 0;
+}
+
+.chat-location-list .chat-location-card:hover,
+.chat-location-list .chat-location-card:focus-visible {
+  background: #edf9fe;
+  color: #087caf;
+  outline: 0;
+}
+
+.chat-location-card__copy {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.chat-location-card__copy strong {
+  overflow: hidden;
+  color: #244455;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-location-card__copy small {
+  margin: 0;
+  color: #6f8590;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.chat-location-card > svg {
+  width: 17px;
+  height: 17px;
+  flex: 0 0 17px;
+  color: #8aa5b1;
+}
+
+.chat-message__warning {
+  margin-top: 7px;
+  color: #748993;
+}
+
+.chat-form {
+  min-height: 66px;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 12px;
+  border-top: 1px solid #e2edf2;
+  background: #fff;
+}
+
+.chat-form input {
+  height: 44px;
+  padding: 0 13px;
+  border: 1px solid #d7e5eb;
+  border-radius: 11px;
+  background: #fbfdfe;
+  color: #243f4d;
+  font-size: 12px;
+  line-height: 44px;
+}
+
+.chat-form input::placeholder {
+  color: #91a1a9;
+}
+
+.chat-form input:focus {
+  border-color: #7dccea;
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, .10);
+}
+
+.chat-form button {
+  min-width: 76px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 13px;
+  border: 0;
+  border-radius: 11px;
+  background: linear-gradient(135deg, #17afea, #087fbe);
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(2, 132, 199, .20);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform .16s ease, box-shadow .16s ease, filter .16s ease;
+}
+
+.chat-form button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.chat-form button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 11px 22px rgba(2, 132, 199, .26);
+  filter: brightness(1.02);
+}
+
+.chat-form button:disabled {
+  background: #d9e6ec;
+  color: #99aab2;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+/* Comment password: use one compact input to avoid vertical alignment drift. */
+.community-comment-form__topline {
+  align-items: center;
+}
+
+.community-comment-form__identity,
+.community-comment-form__password {
+  min-height: 42px;
+}
+
+.community-comment-form__password {
+  display: flex;
+  align-items: center;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid #d7e4ea;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.community-comment-form__password > .sr-only {
+  position: absolute;
+}
+
+.community-comment-form__password input {
+  width: 100%;
+  min-width: 0;
+  height: 42px;
+  padding: 0 12px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #31505f;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: normal;
+}
+
+.community-comment-form__password input::placeholder {
+  color: #7f929c;
+  font-weight: 650;
+  line-height: normal;
+  opacity: 1;
+}
+
+/* Community list: increase requested labels and content by 1px without changing layout. */
+.community-board-search input,
+.community-board-search input::placeholder {
+  font-size: 14px;
+}
+
+.community-board-search__submit,
+.community-board-sort button,
+.community-board-toolbar__write {
+  font-size: 13px;
+}
+
+.community-board-summary strong,
+.community-board-summary span,
+.community-post-card__badges span,
+.community-post-card__meta,
+.community-post-card__meta span,
+.community-post-card__meta time {
+  font-size: 12px;
+}
+
+.community-post-card__title-link h2 {
+  font-size: 21px;
+}
+
+.community-post-card__content-link > p {
+  color: #17242d;
+  font-size: 15px;
+}
+
+.community-post-card__location-copy strong,
+.community-post-card__location-copy small {
+  font-size: 13px;
+}
+
+.community-post-card__rating-inline > span {
+  font-size: 12px;
+}
+
+.community-post-card__rating-inline > strong {
+  font-size: 15px;
+}
+
+.community-board-list .post-vote-button,
+.community-board-list .post-vote-button__label,
+.community-post-card__actions .community-action-button {
+  font-size: 12px;
+}
+
+.community-board-list .post-vote-button__count {
+  font-size: 13px;
+}
+
+/* Map detail: make facilities secondary and reviews the highlighted content area. */
+.restroom-detail-facilities {
+  margin: 12px 14px 0;
+  padding: 16px 16px 15px;
+  border: 0;
+  border-radius: 12px;
+  background: #f7fafc;
+}
+
+.restroom-detail-facilities .restroom-detail-section__heading {
+  padding-bottom: 9px;
+  border-bottom: 1px solid #e5edf1;
+}
+
+.restroom-detail-facilities .facility-list-refined {
+  margin-top: 11px;
+}
+
+.restroom-detail-facilities .restroom-detail-data-note {
+  margin-top: 10px;
+}
+
+.reviews-section--recent {
+  margin: 16px 14px 18px;
+  padding: 18px 0 0;
+  border: 0;
+  border-top: 1px solid #e5edf1;
+  border-radius: 0;
+  background: #fff;
+}
+
+.reviews-heading--recent {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+  padding: 0 2px 10px;
+}
+
+.reviews-heading--recent > div {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  min-width: 0;
+}
+
+.reviews-heading--recent h3 {
+  margin: 0;
+  color: #173746;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.reviews-heading--recent > div > span {
+  color: #7f929c;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.review-card-list--recent {
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: #fff;
+}
+
+.restroom-detail-panel .review-card-list--recent .restroom-review-card--compact {
+  margin: 0;
+  padding: 16px 4px;
+  border: 0;
+  border-bottom: 1px solid #edf2f5;
+  border-radius: 0;
+  background: #fff;
+}
+
+.restroom-detail-panel .review-card-list--recent .restroom-review-card--compact:first-child {
+  padding-top: 14px;
+}
+
+.restroom-detail-panel .review-card-list--recent .restroom-review-card--compact:last-child {
+  border-bottom: 0;
+}
+
+.restroom-detail-panel .review-card-list--recent .restroom-review-card--compact:hover {
+  margin: 0 -6px;
+  padding: 16px 10px;
+  border-radius: 9px;
+  background: #f8fcfe;
+}
+
+.reviews-section--recent .empty-review-state--compact {
+  padding: 18px 4px;
+  border: 0;
+  border-radius: 0;
+  background: #fff;
+  text-align: left;
+}
+
+@media (max-width: 700px) {
+  .chat-window {
+    right: 12px;
+    bottom: 78px;
+    width: calc(100vw - 24px);
+    height: min(570px, calc(100vh - 102px));
+  }
+
+  .chat-form button {
+    min-width: 44px;
+    width: 44px;
+    padding: 0;
+  }
+
+  .chat-form button span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .community-comment-form__password {
+    width: 100%;
+  }
+
+  .reviews-heading--recent {
+    grid-template-columns: 1fr auto;
+  }
+}
+
+/* Sidebar category labels are part of the requested community typography increase. */
+.category-card--sidebar strong,
+.community-board-sidebar__title {
+  font-size: 13px;
+}
+
+/* =========================================================
+   Community final readability and navigation refinements
+   ========================================================= */
+
+/* 최근 댓글 미리보기 텍스트를 현재 크기에서 2px 확대 */
+.community-comment-preview__label,
+.community-comment-preview__row > strong,
+.community-comment-preview__row > p,
+.community-comment-preview__more {
+  font-size: 14px;
+}
+
+.community-comment-preview__more span {
+  font-size: 19px;
+}
+
+@media (max-width: 760px) {
+  .community-comment-preview__more::before {
+    font-size: 14px;
+  }
+}
+
+/* 게시글 상세 제목은 기존보다 2px 축소 */
+.community-detail-title {
+  font-size: clamp(28px, 4vw, 36px);
+}
+
+@media (max-width: 760px) {
+  .community-detail-title {
+    font-size: clamp(24px, 8vw, 30px);
+  }
+}
+
+/* =========================================================
+   Community typography system reset — 2026-07-16
+   Restore a consistent hierarchy after incremental font-size changes.
+   Scale: title 20 / body 15 / supporting 13 / metadata 12.
+   ========================================================= */
+
+/* Board controls and summary */
+.community-board-search input,
+.community-board-search input::placeholder {
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.community-board-search__submit,
+.community-board-sort button,
+.community-board-toolbar__write {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.community-board-summary strong {
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.4;
+}
+
+.community-board-summary span {
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* Feed card hierarchy */
+.community-post-card__badges span,
+.community-post-card__meta,
+.community-post-card__meta span,
+.community-post-card__meta time {
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.community-post-card__title-link h2 {
+  font-size: 20px;
+  font-weight: 750;
+  line-height: 1.4;
+  letter-spacing: -.4px;
+}
+
+.community-post-card__content-link > p {
+  color: #4c6572;
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.65;
+}
+
+.community-post-card__location-copy strong {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.community-post-card__location-copy small {
+  font-size: 12px;
+  font-weight: 450;
+  line-height: 1.4;
+}
+
+.community-post-card__rating-inline {
+  font-size: 12px;
+  line-height: 1;
+}
+
+.community-post-card__rating-inline > span {
+  font-size: 12px;
+  font-weight: 550;
+}
+
+.community-post-card__rating-inline > strong {
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.community-board-list .post-vote-button,
+.community-board-list .post-vote-button__label,
+.community-board-list .post-vote-button__count,
+.community-post-card__actions .community-action-button {
+  font-size: 12px;
+  line-height: 1;
+}
+
+.community-board-list .post-vote-button__label {
+  font-weight: 600;
+}
+
+.community-board-list .post-vote-button__count {
+  font-weight: 800;
+}
+
+/* Recent-comment preview uses one supporting-text size instead of four scales. */
+.community-comment-preview__label,
+.community-comment-preview__row > strong,
+.community-comment-preview__row > p,
+.community-comment-preview__more {
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.community-comment-preview__label {
+  font-weight: 650;
+}
+
+.community-comment-preview__row > strong {
+  font-weight: 700;
+}
+
+.community-comment-preview__more {
+  font-weight: 700;
+}
+
+.community-comment-preview__more span {
+  font-size: 18px;
+  line-height: 1;
+}
+
+/* Detail page hierarchy */
+.community-detail-meta .community-post-card__badges span {
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.community-detail-meta__author {
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.community-detail-title {
+  font-size: clamp(28px, 4vw, 34px);
+  font-weight: 800;
+  line-height: 1.3;
+  letter-spacing: -1.1px;
+}
+
+.community-detail-content {
+  font-size: 15px;
+  line-height: 1.75;
+}
+
+.community-detail-context__copy strong {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.community-detail-context__copy small,
+.community-detail-rating span {
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.community-detail-rating strong {
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.community-detail-actions .post-vote-button,
+.community-detail-actions .post-vote-button__label,
+.community-detail-actions .post-vote-button__count,
+.community-detail-actions .community-action-button,
+.community-detail-ai,
+.community-detail-more__menu button {
+  font-size: 12px;
+  line-height: 1;
+}
+
+/* Comment section hierarchy */
+.community-comments-heading h2 {
+  font-size: 20px;
+  line-height: 1.35;
+}
+
+.community-comments-heading h2 span {
+  font-size: 12px;
+  line-height: 1;
+}
+
+.community-comments-heading p {
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.community-comment-form__identity strong,
+.community-comment-item strong {
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.community-comment-form__identity small,
+.community-comment-item time {
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.community-comment-item p {
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+@media (max-width: 760px) {
+  .community-post-card__title-link h2 {
+    font-size: 19px;
+  }
+
+  .community-comment-preview__more::before {
+    font-size: 13px;
+  }
+
+  .community-detail-title {
+    font-size: clamp(25px, 7.2vw, 29px);
+    line-height: 1.32;
+    letter-spacing: -.8px;
+  }
+
+  .community-detail-content {
+    font-size: 15px;
+    line-height: 1.7;
+  }
+}
+
+/* =========================================================
+   Restroom review CTA compact sizing — 2026-07-16
+   ========================================================= */
+.restroom-review-hero__actions {
+  width: auto;
+  flex: 0 0 auto;
+  grid-template-columns: 156px 52px;
+  align-items: center;
+  gap: 8px;
+}
+
+.restroom-review-hero__actions .restroom-review-primary-action {
+  width: 156px;
+  min-height: 52px;
+  height: 52px;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 14px;
+  border-radius: 14px;
+  text-align: center;
+}
+
+.restroom-review-primary-action__icon {
+  width: 32px;
+  height: 32px;
+  flex-basis: 32px;
+  border-radius: 9px;
+}
+
+.restroom-review-primary-action__icon svg {
+  width: 17px;
+  height: 17px;
+}
+
+.restroom-review-primary-action__copy {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.restroom-review-primary-action__copy strong {
+  font-size: 13px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.restroom-review-primary-action__copy small {
+  display: none;
+}
+
+.restroom-review-hero__actions .restroom-review-share-action {
+  width: 52px;
+  min-width: 52px;
+  min-height: 52px;
+  height: 52px;
+  align-self: center;
+}
+
+@media (max-width: 520px) {
+  .restroom-review-hero__actions {
+    width: 100%;
+    grid-template-columns: minmax(0, 1fr) 48px;
+  }
+
+  .restroom-review-hero__actions .restroom-review-primary-action {
+    width: 100%;
+    min-height: 48px;
+    height: 48px;
+  }
+
+  .restroom-review-hero__actions .restroom-review-share-action {
+    width: 48px;
+    min-width: 48px;
+    min-height: 48px;
+    height: 48px;
   }
 }
