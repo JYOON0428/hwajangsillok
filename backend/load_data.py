@@ -12,7 +12,8 @@ from urllib.request import Request, urlopen
 from sqlalchemy.orm import Session
 
 from app.database import Base, SessionLocal, engine
-from app.models import Post, Review, Toilet
+from app.models import Post, Toilet, Comment
+import random
 
 BACKEND_ROOT = Path(__file__).resolve().parent
 TOILET_FILE_NAME = "공중화장실정보_서울특별시.csv"
@@ -111,16 +112,6 @@ SAMPLE_PLACES = [
         "content": "층별 편차가 있지만 상층부는 비교적 덜 붐비고 깨끗했습니다.",
         "rating": 4.1,
         "nickname": "깨끗한 탐험가",
-    },
-    {
-        "name": "강남역",
-        "lat": 37.4979,
-        "lon": 127.0276,
-        "category": "쇼핑",
-        "title": "강남역 주변 급할 때 참고",
-        "content": "역 주변은 혼잡하지만 비상벨과 장애인용 시설이 있는 곳을 찾을 수 있었습니다.",
-        "rating": 3.8,
-        "nickname": "도시 산책자",
     },
 ]
 
@@ -395,41 +386,60 @@ def load_sample_posts() -> int:
     db = SessionLocal()
     try:
         count = 0
-        for index, place in enumerate(SAMPLE_PLACES, start=1):
+        nick_adjectives = ["상쾌한", "푸른", "조용한", "빠른", "따뜻한", "밝은"]
+        nick_nouns = ["여행자", "시민", "산책러", "탐험가", "방문객"]
+
+        for place in SAMPLE_PLACES:
+            # pick nearby toilet
             toilet = find_nearest_toilet(db, place["lat"], place["lon"])
-            post = Post(
-                category=place["category"],
-                title=place["title"],
-                content=place["content"],
-                password="1234",
-                rating=place["rating"],
-                nickname=place["nickname"],
-                post_type="화장실 리뷰",
-                related_place=place["name"],
-                restroom_name=toilet.name if toilet else "",
-                toilet_id=toilet.toilet_id if toilet else None,
-                recommendation_count=12 - index,
-                comment_count=index % 4,
-            )
-            db.add(post)
+            if not toilet:
+                continue
 
-            # Ensure post has a primary key assigned before creating a linked review
-            try:
-                db.flush()
-            except Exception:
-                pass
+            # create 1-3 posts for the place with varying ratings
+            post_count = random.randint(1, 3)
+            for i in range(post_count):
+                title = f"{place['title']} - 후기 #{i+1}"
+                rating = max(0.5, min(5.0, round(random.gauss(place['rating'], 1.0), 1)))
+                nickname = f"{random.choice(nick_adjectives)} {random.choice(nick_nouns)} #{random.randint(1,99)}"
+                # make post content slightly unique per post to avoid duplicate content
+                post_content = f"{place['content']} (방문 후기 {i+1})"
+                post = Post(
+                    category=place["category"],
+                    title=title,
+                    content=post_content,
+                    password="1234",
+                    rating=rating,
+                    nickname=nickname,
+                    post_type="화장실 리뷰",
+                    related_place=place["name"],
+                    restroom_name=toilet.name,
+                    toilet_id=toilet.toilet_id,
+                    recommendation_count=random.randint(0, 20),
+                    comment_count=0,
+                )
+                db.add(post)
+                try:
+                    db.flush()
+                except Exception:
+                    pass
 
-            if toilet:
-                db.add(
-                    Review(
-                        toilet_id=toilet.toilet_id,
+                # NOTE: reviews are intentionally not auto-created here.
+                # The user will add Review entries manually later if desired.
+                # create 0-3 comments for this post
+                comment_num = random.randint(0, 3)
+                for j in range(comment_num):
+                    c_nick = f"{random.choice(nick_adjectives)} {random.choice(nick_nouns)}"
+                    c = Comment(
                         post_id=post.post_id if getattr(post, "post_id", None) else None,
-                        rating=place["rating"],
-                        content=place["content"],
+                        nickname=c_nick,
+                        password="1234",
+                        content=f"{c_nick}의 코멘트 #{j+1}",
                         created_at=datetime.utcnow(),
                     )
-                )
-            count += 1
+                    db.add(c)
+                    post.comment_count = (post.comment_count or 0) + 1
+
+                count += 1
 
         db.commit()
         return count
@@ -448,4 +458,4 @@ if __name__ == "__main__":
     toilet_count = load_toilet_data(csv_path)
     post_count = load_sample_posts()
     print(f"Loaded {toilet_count} toilets.")
-    print(f"Loaded {post_count} sample posts and reviews.")
+    print(f"Loaded {post_count} sample posts.")

@@ -153,6 +153,7 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 .chat-location-list { display: grid; gap: 7px; margin-top: 9px; }
 .chat-location-list article { display: grid; gap: 3px; padding: 9px; border: 1px solid var(--line); border-radius: 10px; background: #f8fcfe; }
 .chat-location-list span { color: #657b87; font-size: 12px; }
+.chat-location-list em { color: #50636d; font-size: 12px; font-style: normal; line-height: 1.45; }
 .chat-loading { color: var(--muted); font-size: 12px; }
 .chat-form { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--line); }
 .chat-form input { flex: 1; min-width: 0; padding: 10px; border: 1px solid var(--line); border-radius: 11px; outline: 0; }
