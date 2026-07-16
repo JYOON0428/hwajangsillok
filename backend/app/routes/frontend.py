@@ -6,19 +6,27 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 import os
+import logging
 
 import httpx
+from dotenv import load_dotenv
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import and_, func, or_
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Post, Review, Toilet
+from app.models import Post, Review, Toilet, Comment
 
 router = APIRouter(prefix="/api", tags=["frontend"])
 
 BACKEND_ROOT = Path(__file__).resolve().parents[2]
+
+# backend/.env 파일을 명시적으로 불러옵니다.
+load_dotenv(BACKEND_ROOT / ".env")
+
+logger = logging.getLogger(__name__)
+
 UPLOAD_DIR = BACKEND_ROOT / "uploads"
 SEOUL_DATA_DIR = BACKEND_ROOT / "data" / "seoul"
 
@@ -287,6 +295,24 @@ def _normalize_post(post: Post, anonymous_name: str | None = None) -> dict[str, 
     restroom = post.toilet
     restroom_name = post.restroom_name or (restroom.name if restroom else "")
 
+    # build comments list if relationship is available
+    comments_list: list[dict[str, Any]] = []
+    try:
+        raw_comments = getattr(post, "comments", []) or []
+        for c in raw_comments:
+            comments_list.append(
+                {
+                    "id": c.id,
+                    "commentId": c.id,
+                    "nickname": c.nickname or "익명의 사용자",
+                    "content": c.content,
+                    "createdAt": _client_datetime(c.created_at),
+                    "updatedAt": _client_datetime(c.updated_at) if getattr(c, "updated_at", None) else "",
+                }
+            )
+    except Exception:
+        comments_list = []
+
     return {
         "id": post.post_id,
         "postId": post.post_id,
@@ -301,6 +327,8 @@ def _normalize_post(post: Post, anonymous_name: str | None = None) -> dict[str, 
         "rating": post.rating,
         "recommendationCount": post.recommendation_count or 0,
         "commentCount": post.comment_count or 0,
+        "comments": comments_list,
+        "commentPreview": comments_list[:3],
         "createdAt": _client_datetime(post.created_at),
         "createdAtLabel": _time_label(post.created_at),
         "updatedAt": _client_datetime(post.updated_at),
@@ -941,7 +969,7 @@ def _trim_chat_answer(answer: str, max_chars: int = 360) -> str:
     return text[:max_chars].rstrip() + "..."
 
 
-def _fallback_chat_answer(context: dict[str, Any]) -> str:
+# def _fallback_chat_answer(context: dict[str, Any]) -> str:
     intent = context.get("intent")
     if intent == "greeting":
         return "안녕하세요! 장소나 조건을 말해주시면 가까운 화장실을 찾아드릴게요."
@@ -970,7 +998,111 @@ def _fallback_chat_answer(context: dict[str, Any]) -> str:
         return f"{context.get('center', {}).get('label', '검색 위치')} 기준으로는 {best['name']}가 좋아 보여요. {best['distanceMeters']}m 거리이고 {rating_text}입니다."
 
     return "조건에 맞는 화장실을 찾지 못했어요. 위치나 반경을 조금 넓혀보세요."
+def _fallback_chat_answer(
+    context: dict[str, Any],
+    message: str = "",
+) -> str:
+    """
+    OpenAI API 호출이 실패했을 때만 사용하는 기본 답변입니다.
+    정상적인 일반 대화는 OpenAI가 처리합니다.
+    """
 
+    intent = context.get("intent")
+
+    cleaned_message = re.sub(
+        r"[\s!?.~]+",
+        "",
+        message.lower(),
+    )
+
+    if intent == "greeting":
+        return "안녕하세요! 반가워요. 오늘은 어떤 이야기를 해볼까요?"
+
+    if intent == "general":
+        place_info = context.get("placeInfo")
+
+        if place_info:
+            address = (
+                f" 위치는 {place_info['address']} 쪽이에요."
+                if place_info.get("address")
+                else ""
+            )
+
+            return (
+                f"네, {place_info['title']} 알아요. "
+                f"서울의 {place_info['category']}로 볼 수 있는 장소예요."
+                f"{address}"
+            )
+
+        if cleaned_message in {
+            "야",
+            "저기",
+            "있잖아",
+            "챗봇아",
+        }:
+            return "네, 듣고 있어요. 무슨 일이에요?"
+
+        # API 연결 실패 상황임을 솔직하게 표시합니다.
+        return (
+            "지금 AI 대화 연결이 원활하지 않아요. "
+            "잠시 후 다시 말해 주세요."
+        )
+
+    if context.get("needsPlace"):
+        return (
+            context.get("question")
+            or "어느 장소를 기준으로 찾아볼까요?"
+        )
+
+    focused = context.get("focusedRestroom")
+
+    if focused:
+        rating = focused.get("rating")
+        snippets = focused.get("reviewSnippets") or []
+
+        rating_text = (
+            "리뷰 없음"
+            if rating is None
+            else f"평점 {rating}"
+        )
+
+        if snippets:
+            return (
+                f"{focused['name']}은 {rating_text}이고, "
+                f"최근 후기는 '{snippets[0]['content']}' 정도로 요약돼요."
+            )
+
+        return (
+            f"{focused['name']}은 {rating_text}이에요. "
+            "아직 자세한 리뷰는 많지 않습니다."
+        )
+
+    restrooms = context.get("restrooms") or []
+
+    if restrooms:
+        best = restrooms[0]
+        rating = best.get("rating")
+
+        rating_text = (
+            "리뷰 없음"
+            if rating is None
+            else f"평점 {rating}"
+        )
+
+        center_label = (
+            context.get("center", {}).get("label")
+            or "검색 위치"
+        )
+
+        return (
+            f"{center_label} 기준으로는 {best['name']}가 가까워요. "
+            f"{best['distanceMeters']}m 거리이고 {rating_text}입니다."
+        )
+
+    return (
+        "조건에 맞는 화장실을 찾지 못했어요. "
+        "위치나 검색 반경을 조금 넓혀보세요."
+    )
 
 def _chat_place_info(db: Session, message: str) -> dict[str, Any] | None:
     keyword = _extract_place_keyword(db, message)
@@ -1013,37 +1145,204 @@ def _openai_content_from_response(data: dict[str, Any]) -> str:
     return str(content or "")
 
 
-async def _call_openai_chat(openai_key: str, openai_model: str, messages: list[dict[str, str]]) -> str:
-    base_payload = {"model": openai_model, "messages": messages}
-    payloads = [
-        {**base_payload, "max_completion_tokens": 220},
-        {**base_payload, "max_tokens": 220, "temperature": 0.4},
-        base_payload,
-    ]
-    last_error: Exception | None = None
+# async def _call_openai_chat(openai_key: str, openai_model: str, messages: list[dict[str, str]]) -> str:
+#     base_payload = {"model": openai_model, "messages": messages}
+#     payloads = [
+#         {**base_payload, "max_completion_tokens": 220},
+#         {**base_payload, "max_tokens": 220, "temperature": 0.4},
+#         base_payload,
+#     ]
+#     last_error: Exception | None = None
+
+#     async with httpx.AsyncClient(timeout=30.0) as client:
+#         for body in payloads:
+#             try:
+#                 response = await client.post(
+#                     "https://api.openai.com/v1/chat/completions",
+#                     headers={"Authorization": f"Bearer {openai_key}"},
+#                     json=body,
+#                 )
+#                 response.raise_for_status()
+#                 return _openai_content_from_response(response.json())
+#             except httpx.HTTPStatusError as exc:
+#                 last_error = exc
+#                 if exc.response.status_code not in {400, 422}:
+#                     break
+#             except Exception as exc:
+#                 last_error = exc
+#                 break
+
+#     if last_error:
+#         raise last_error
+#     return ""
+async def _call_openai_chat(
+    openai_key: str,
+    openai_model: str,
+    messages: list[dict[str, str]],
+) -> str:
+    """
+    OpenAI Chat Completions API를 호출하고
+    실제 챗봇 답변 문자열을 반환합니다.
+    """
+
+    body = {
+        "model": openai_model,
+        "messages": messages,
+
+        # 기존 220은 추론 토큰까지 포함하면 너무 작을 수 있습니다.
+        # 답변이 비는 현상을 방지하기 위해 여유 있게 설정합니다.
+        "max_completion_tokens": 1000,
+    }
 
     async with httpx.AsyncClient(timeout=30.0) as client:
-        for body in payloads:
-            try:
-                response = await client.post(
-                    "https://api.openai.com/v1/chat/completions",
-                    headers={"Authorization": f"Bearer {openai_key}"},
-                    json=body,
-                )
-                response.raise_for_status()
-                return _openai_content_from_response(response.json())
-            except httpx.HTTPStatusError as exc:
-                last_error = exc
-                if exc.response.status_code not in {400, 422}:
-                    break
-            except Exception as exc:
-                last_error = exc
-                break
+        response = await client.post(
+            "https://api.openai.com/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {openai_key}",
+                "Content-Type": "application/json",
+            },
+            json=body,
+        )
 
-    if last_error:
-        raise last_error
-    return ""
+    if response.is_error:
+        # API 키는 출력하지 않고 OpenAI 오류 내용만 확인합니다.
+        error_text = response.text[:1000]
 
+        raise RuntimeError(
+            f"OpenAI API error {response.status_code}: {error_text}"
+        )
+
+    data = response.json()
+    choices = data.get("choices") or []
+
+    if not choices:
+        raise RuntimeError(
+            f"OpenAI 응답에 choices가 없습니다: {str(data)[:500]}"
+        )
+
+    assistant_text = _openai_content_from_response(data).strip()
+
+    if not assistant_text:
+        choice = choices[0]
+
+        raise RuntimeError(
+            "OpenAI가 빈 답변을 반환했습니다. "
+            f"finish_reason={choice.get('finish_reason')}, "
+            f"usage={data.get('usage')}"
+        )
+
+    return assistant_text
+
+
+def _sanitize_chat_history(history: Any) -> list[dict[str, str]]:
+    """
+    프론트에서 전달받은 history를
+    OpenAI가 이해할 수 있는 메시지 형식으로 정리합니다.
+    """
+
+    if not isinstance(history, list):
+        return []
+
+    role_aliases = {
+        "user": "user",
+        "assistant": "assistant",
+
+        # 프론트에서 bot 또는 ai로 보내는 경우를 대비합니다.
+        "bot": "assistant",
+        "ai": "assistant",
+    }
+
+    cleaned_history: list[dict[str, str]] = []
+
+    for item in history[-8:]:
+        if not isinstance(item, dict):
+            continue
+
+        raw_role = str(item.get("role") or "").lower()
+        role = role_aliases.get(raw_role)
+        content = item.get("content")
+
+        if not role:
+            continue
+
+        if not isinstance(content, str):
+            continue
+
+        content = content.strip()
+
+        if not content:
+            continue
+
+        cleaned_history.append({
+            "role": role,
+            "content": content,
+        })
+
+    return cleaned_history
+
+
+def _openai_service_context(
+    context: dict[str, Any],
+    locations: list[dict[str, Any]],
+) -> str:
+    """
+    일반 대화에는 DB 검색 결과를 넣지 않고,
+    화장실 검색이나 리뷰 질문일 때만 DB 데이터를 전달합니다.
+    """
+
+    intent = context.get("intent")
+
+    if intent in {"greeting", "general"}:
+        return (
+            "현재 요청은 일반 대화입니다. "
+            "화장실 이야기를 억지로 꺼내지 말고 "
+            "사용자가 한 말에 직접 자연스럽게 답하세요."
+        )
+
+    safe_locations: list[dict[str, Any]] = []
+
+    for location in locations[:6]:
+        safe_locations.append({
+            "name": location.get("name"),
+            "address": location.get("address"),
+            "distanceMeters": location.get("distanceMeters"),
+            "rating": location.get("rating"),
+            "reviewCount": location.get("reviewCount"),
+            "openingHours": location.get("openingHours"),
+            "openNow": location.get("openNow"),
+            "tags": location.get("tags") or [],
+            "facilities": location.get("facilities") or {},
+            "latestReview": location.get("latestReview"),
+            "reviewSnippets": (
+                location.get("reviewSnippets") or []
+            )[:3],
+        })
+
+    service_data = {
+        "intent": intent,
+        "needsPlace": context.get("needsPlace", False),
+        "question": context.get("question"),
+        "center": context.get("center"),
+        "sortBy": context.get("sortBy"),
+        "conditions": context.get("conditions"),
+        "locations": safe_locations,
+        "communityPosts": (
+            context.get("communityPosts") or []
+        )[:4],
+    }
+
+    return (
+        "아래는 백엔드 DB에서 실제로 조회한 서비스 데이터입니다.\n"
+        "화장실 위치, 추천, 시설, 평점, 리뷰에 대한 답변은 "
+        "반드시 이 데이터만 근거로 작성하세요.\n"
+        "데이터에 없는 내용은 추측하거나 만들어내지 마세요.\n\n"
+        + json.dumps(
+            service_data,
+            ensure_ascii=False,
+            default=str,
+            indent=2,
+        )
+    )
 
 def _rating_text(rating: Any) -> str:
     return "리뷰 없음" if rating is None else f"평점 {rating}"
@@ -1401,6 +1700,90 @@ async def get_post(post_id: int, db: Session = Depends(get_db)):
     return _normalize_post(post, _anonymous_name_for_post(db, post))
 
 
+def _normalize_comment(comment: Comment) -> dict[str, Any]:
+    return {
+        "id": comment.id,
+        "commentId": comment.id,
+        "nickname": comment.nickname or "익명의 사용자",
+        "content": comment.content,
+        "createdAt": _client_datetime(comment.created_at),
+        "updatedAt": _client_datetime(comment.updated_at) if getattr(comment, "updated_at", None) else "",
+    }
+
+
+@router.post("/posts/{post_id}/comments", status_code=status.HTTP_201_CREATED)
+async def create_comment(post_id: int, request: Request, db: Session = Depends(get_db)):
+    post = db.query(Post).filter(Post.post_id == post_id).first()
+    if not post:
+        raise HTTPException(status_code=404, detail="게시글을 찾을 수 없습니다.")
+
+    try:
+        payload = await request.json()
+    except json.JSONDecodeError:
+        payload = {}
+
+    nickname = str(payload.get("nickname") or "").strip() or "익명의 사용자"
+    password = str(payload.get("password") or "")
+    content = str(payload.get("content") or "").strip()
+
+    if not content or not password:
+        raise HTTPException(status_code=400, detail="내용과 비밀번호는 필수입니다.")
+
+    comment = Comment(post_id=post_id, nickname=nickname, password=password, content=content)
+    db.add(comment)
+    post.comment_count = (post.comment_count or 0) + 1
+    db.commit()
+    db.refresh(comment)
+    return _normalize_comment(comment)
+
+
+@router.put("/posts/{post_id}/comments/{comment_id}")
+async def update_comment(post_id: int, comment_id: int, request: Request, db: Session = Depends(get_db)):
+    comment = db.query(Comment).filter(Comment.id == comment_id, Comment.post_id == post_id).first()
+    if not comment:
+        raise HTTPException(status_code=404, detail="댓글을 찾을 수 없습니다.")
+
+    try:
+        payload = await request.json()
+    except json.JSONDecodeError:
+        payload = {}
+
+    if comment.password != str(payload.get("password") or ""):
+        raise HTTPException(status_code=401, detail="비밀번호가 일치하지 않습니다.")
+
+    if "content" in payload and payload.get("content") not in (None, ""):
+        comment.content = str(payload.get("content") or "").strip()
+    if "nickname" in payload and payload.get("nickname") not in (None, ""):
+        comment.nickname = str(payload.get("nickname") or "").strip()
+
+    comment.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(comment)
+    return _normalize_comment(comment)
+
+
+@router.delete("/posts/{post_id}/comments/{comment_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_comment(post_id: int, comment_id: int, request: Request, db: Session = Depends(get_db)):
+    comment = db.query(Comment).filter(Comment.id == comment_id, Comment.post_id == post_id).first()
+    if not comment:
+        raise HTTPException(status_code=404, detail="댓글을 찾을 수 없습니다.")
+
+    try:
+        payload = await request.json()
+    except json.JSONDecodeError:
+        payload = {}
+
+    if comment.password != str(payload.get("password") or ""):
+        raise HTTPException(status_code=401, detail="비밀번호가 일치하지 않습니다.")
+
+    post = db.query(Post).filter(Post.post_id == post_id).first()
+    db.delete(comment)
+    if post:
+        post.comment_count = max(0, (post.comment_count or 0) - 1)
+    db.commit()
+    return None
+
+
 @router.post("/posts/{post_id}/verify-password")
 async def verify_post_password(post_id: int, request: Request, db: Session = Depends(get_db)):
     post = db.query(Post).filter(Post.post_id == post_id).first()
@@ -1544,62 +1927,76 @@ async def delete_post(post_id: int, request: Request, db: Session = Depends(get_
 async def chat(payload: dict[str, Any], db: Session = Depends(get_db)):
     message = str(payload.get("message") or "").strip()
     if not message:
-        return {"answer": "무엇을 도와드릴까요?", "locations": [], "warnings": []}
+        intro = (
+            "안녕하세요! 화장실록 챗봇입니다. 궁금하신 화장실 위치나 이용 후기를 간단히 알려드릴게요."
+        )
+        return {"answer": intro, "locations": [], "warnings": []}
 
-    history = payload.get("history") or [{"role": "user", "content": message}]
+    history = payload.get("history", [])
     user_lat = payload.get("latitude")
     user_lon = payload.get("longitude")
+
+    # 1. 문맥과 검색 결과 분석
     context, locations = _build_chat_context(db, message, history, user_lat, user_lon)
-
-    if context.get("intent") == "greeting" or context.get("needsPlace"):
-        return {"answer": _fallback_chat_answer(context), "locations": locations, "warnings": []}
-
-    direct_answer = _direct_service_chat_answer(context)
-    if direct_answer:
-        return {"answer": direct_answer, "locations": locations, "warnings": []}
+    intent = context.get("intent") # intent 추출 ('greeting', 'general', 'restroom_search' 등)
 
     openai_key = os.getenv("OPENAI_API_KEY")
-    openai_model = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
+    openai_model = os.getenv("OPENAI_MODEL")
 
-    if openai_key:
-        try:
-            clean_history: list[dict[str, str]] = []
-            if isinstance(history, list):
-                for item in history[-8:]:
-                    if not isinstance(item, dict):
-                        continue
-                    role = item.get("role")
-                    content = _compact_text(item.get("content"), 500)
-                    if role in {"user", "assistant"} and content:
-                        clean_history.append({"role": role, "content": content})
-            if not clean_history or clean_history[-1]["content"] != message:
-                clean_history.append({"role": "user", "content": message})
+    if not openai_key:
+        return {"answer": _fallback_chat_answer(context), "locations": locations, "warnings": []}
 
-            system_message = {
-                "role": "system",
-                "content": (
-                    "너는 '화장실록'의 AI 챗봇이다. 한국어로 자연스럽게 답한다. "
-                    "기본 답변은 1~3문장, 최대 300자 안에서 끝낸다. "
-                    "인사와 간단한 잡담은 한 문장으로 답한다. "
-                    "화장실 추천/리뷰 질문은 반드시 제공된 서비스 DB 컨텍스트만 근거로 답하고, "
-                    "없는 정보는 추측하지 않는다. 장소가 부족하면 짧게 되묻는다."
-                ),
-            }
-            context_message = {
-                "role": "system",
-                "content": "서비스 DB 컨텍스트(JSON): "
-                + json.dumps(context, ensure_ascii=False, default=str),
-            }
-
-            assistant_text = await _call_openai_chat(
-                openai_key,
-                openai_model,
-                [system_message, context_message] + clean_history,
+    try:
+        # 2. 의도(Intent)에 따라 시스템 프롬프트 분기 처리
+        if intent in ("greeting", "general"):
+            # 인사말이나 일상 대화일 때는 자유롭고 친절한 페르소나 부여
+            system_content = (
+                "당신은 친절하고 유쾌한 '화장실록' 서비스의 마스코트 AI 어시스턴트입니다. "
+                "사용자의 인사나 가벼운 질문에 친근하고 센스 있게 한국어로 답해 주세요. "
+                "궁금한 화장실 위치나 조건(예: '역삼역 근처 기저귀 교환대 있는 화장실')을 물어보면 "
+                "언제든 찾아줄 수 있다고 자연스럽게 안내해 주세요."
             )
-            if assistant_text:
-                return {"answer": _trim_chat_answer(assistant_text), "locations": locations, "warnings": []}
-        except Exception as exc:
-            warnings = [f"일반 대화 AI 연결 실패: {type(exc).__name__}"]
-            return {"answer": _fallback_chat_answer(context), "locations": locations, "warnings": warnings}
+        else:
+            # 화장실 검색, 리뷰, 커뮤니티 조회 등의 실무적인 질문일 때
+            context_text = ""
+            if locations:
+                context_text = "다음은 검색된 화장실 목록입니다:\n"
+                for loc in locations:
+                    rating = f"평점 {loc.get('rating')}" if loc.get("rating") else "리뷰 없음"
+                    context_text += f"- {loc.get('name')} (거리: {loc.get('distanceMeters')}m, {rating})\n"
+            
+            system_content = (
+                "당신은 '화장실록' 서비스의 AI 어시스턴트입니다. "
+                "아래 제공된 [화장실 검색 결과]를 바탕으로 사용자 질문에 친절하고 간결하게 한국어로 답하세요. "
+                "검색 결과에 없는 정보는 지어내지 마세요.\n\n"
+                f"[화장실 검색 결과]\n{context_text}"
+            )
 
-    return {"answer": _fallback_chat_answer(context), "locations": locations, "warnings": []}
+        system_message = {
+            "role": "system",
+            "content": system_content,
+        }
+        
+        # 3. 메시지 대화 목록 구성 (빈 대화 방어 로직 추가)
+        messages = [system_message]
+        if isinstance(history, list):
+            for h in history[-4:]:
+                role = h.get("role")
+                content = h.get("content")
+                # content가 존재하고 빈 문자열이 아닐 때만 추가 (빈 값이면 OpenAI가 응답을 거부할 수 있음)
+                if role and content and isinstance(content, str) and content.strip():
+                    messages.append({"role": role, "content": content.strip()})
+                    
+        messages.append({"role": "user", "content": message})
+
+        # 4. OpenAI 호출
+        assistant_text = await _call_openai_chat(openai_key, openai_model, messages)
+        
+        # 5. 빈 말풍선 방지 로직: AI가 알 수 없는 이유로 빈 응답을 주면 안전한 기본 답변으로 강제 교체
+        if not assistant_text or not assistant_text.strip():
+            assistant_text = _fallback_chat_answer(context)
+
+        return {"answer": _trim_chat_answer(assistant_text), "locations": locations, "warnings": []}
+        
+    except Exception as exc:
+        return {"answer": _fallback_chat_answer(context), "locations": locations, "warnings": [str(type(exc).__name__)]}

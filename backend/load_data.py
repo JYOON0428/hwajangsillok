@@ -12,7 +12,7 @@ from urllib.request import Request, urlopen
 from sqlalchemy.orm import Session
 
 from app.database import Base, SessionLocal, engine
-from app.models import Post, Review, Toilet, Comment
+from app.models import Post, Toilet, Comment
 import random
 
 BACKEND_ROOT = Path(__file__).resolve().parent
@@ -112,16 +112,6 @@ SAMPLE_PLACES = [
         "content": "층별 편차가 있지만 상층부는 비교적 덜 붐비고 깨끗했습니다.",
         "rating": 4.1,
         "nickname": "깨끗한 탐험가",
-    },
-    {
-        "name": "강남역",
-        "lat": 37.4979,
-        "lon": 127.0276,
-        "category": "쇼핑",
-        "title": "강남역 주변 급할 때 참고",
-        "content": "역 주변은 혼잡하지만 비상벨과 장애인용 시설이 있는 곳을 찾을 수 있었습니다.",
-        "rating": 3.8,
-        "nickname": "도시 산책자",
     },
 ]
 
@@ -433,25 +423,8 @@ def load_sample_posts() -> int:
                 except Exception:
                     pass
 
-                # create a linked review for this post
-                # build varied review content using templates
-                review_templates = [
-                    "{nick}님이 남긴 솔직한 후기: {base}",
-                    "{base} 방문 후기 — 느낀 점: 괜찮았습니다.",
-                    "{base} 재방문 의사 있습니다.",
-                    "{base} (간단 후기)",
-                ]
-                review_content = random.choice(review_templates).format(nick=nickname, base=place["content"].split('。')[0])
-                db.add(
-                    Review(
-                        toilet_id=toilet.toilet_id,
-                        post_id=post.post_id if getattr(post, "post_id", None) else None,
-                        rating=rating,
-                        content=review_content,
-                        created_at=datetime.utcnow(),
-                    )
-                )
-
+                # NOTE: reviews are intentionally not auto-created here.
+                # The user will add Review entries manually later if desired.
                 # create 0-3 comments for this post
                 comment_num = random.randint(0, 3)
                 for j in range(comment_num):
@@ -485,4 +458,4 @@ if __name__ == "__main__":
     toilet_count = load_toilet_data(csv_path)
     post_count = load_sample_posts()
     print(f"Loaded {toilet_count} toilets.")
-    print(f"Loaded {post_count} sample posts and reviews.")
+    print(f"Loaded {post_count} sample posts.")
