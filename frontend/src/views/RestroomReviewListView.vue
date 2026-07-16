@@ -247,9 +247,24 @@ onMounted(loadPage)
 <template>
   <main class="restroom-review-page">
     <div class="page-container restroom-review-page__shell">
-      <button class="restroom-review-page__back" type="button" @click="router.back()">
-        <span aria-hidden="true">←</span>
-        이전 화면
+      <button
+        class="community-detail-back restroom-review-page__back"
+        type="button"
+        aria-label="이전 화면으로 돌아가기"
+        @click="router.back()"
+      >
+        <span class="community-detail-back__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path
+              d="m14.5 5-7 7 7 7"
+              stroke="currentColor"
+              stroke-width="1.9"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </span>
+        <span>이전 화면</span>
       </button>
 
       <p v-if="loading" class="state-message">화장실 리뷰를 불러오는 중입니다.</p>
@@ -297,8 +312,7 @@ onMounted(loadPage)
                 </svg>
               </span>
               <span class="restroom-review-primary-action__copy">
-                <strong>리뷰 작성</strong>
-                <small>이용 경험을 남겨주세요</small>
+                <strong>리뷰 쓰기</strong>
               </span>
             </button>
 
@@ -399,7 +413,6 @@ onMounted(loadPage)
               <p>
                 {{ reviewKeyword ? '다른 검색어로 확인해보세요.' : '첫 번째 이용 후기를 남겨보세요.' }}
               </p>
-              <button v-if="!reviewKeyword" type="button" @click="writeReview">리뷰 작성</button>
             </section>
 
             <div v-else class="restroom-review-feed__list">

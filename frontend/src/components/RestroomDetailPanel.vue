@@ -1,18 +1,38 @@
 <script setup>
+import { computed } from 'vue'
 import RestroomReviewCard from './RestroomReviewCard.vue'
 
-defineProps({
+const props = defineProps({
   restroom: { type: Object, default: null },
   reviews: { type: Array, default: () => [] },
   reviewSort: { type: String, default: 'recent' },
   reviewsLoading: { type: Boolean, default: false },
+  closable: { type: Boolean, default: true },
 })
 
-const emit = defineEmits(['update:reviewSort', 'write-review', 'share', 'open-review-post'])
+const emit = defineEmits([
+  'update:reviewSort',
+  'write-review',
+  'share',
+  'close',
+  'open-reviews',
+  'open-review-post',
+])
 
-function forwardOpenPost(review) {
-  emit('open-review-post', review)
-}
+const recentReviews = computed(() => props.reviews.slice(0, 2))
+
+const availableFacilities = computed(() => {
+  const facilities = props.restroom?.facilities || {}
+  return [
+    ['diaperTable', '기저귀 교환대'],
+    ['accessible', '장애인용 시설'],
+    ['emergencyBell', '비상벨'],
+    ['entranceCctv', '입구 CCTV'],
+    ['open24Hours', '24시간 개방'],
+  ]
+    .filter(([key]) => Boolean(facilities[key]))
+    .map(([, label]) => label)
+})
 
 function ratingClass(rating) {
   if (rating == null) return 'rating-none'
@@ -36,16 +56,28 @@ function operationStatus(restroom) {
   <section class="restroom-detail-panel">
     <div v-if="!restroom" class="detail-placeholder">
       <strong>화장실을 선택하세요.</strong>
-      <p>목록이나 지도 핀을 선택하면 시설 정보와 리뷰가 표시됩니다.</p>
+      <p>목록이나 지도 핀을 선택하면 시설 정보와 최근 리뷰가 표시됩니다.</p>
     </div>
 
     <template v-else>
-      <header class="restroom-detail-header">
+      <header class="restroom-detail-header restroom-detail-header--refined">
+        <div class="restroom-detail-header__top">
+          <span class="detail-eyebrow">선택한 화장실</span>
+          <button
+            v-if="closable"
+            class="restroom-detail-close"
+            type="button"
+            aria-label="화장실 상세 닫기"
+            @click="emit('close')"
+          >
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="m7 7 10 10M17 7 7 17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+            </svg>
+          </button>
+        </div>
+
         <div class="detail-title-row">
-          <div>
-            <span class="detail-eyebrow">선택한 화장실</span>
-            <h2>{{ restroom.name }}</h2>
-          </div>
+          <h2>{{ restroom.name }}</h2>
           <span class="detail-distance">{{ restroom.distanceMeters }}m</span>
         </div>
 
@@ -53,7 +85,7 @@ function operationStatus(restroom) {
           <strong :class="ratingClass(restroom.rating)">
             {{ restroom.rating == null ? '리뷰 없음' : `★ ${restroom.rating}` }}
           </strong>
-          <span>리뷰 {{ restroom.reviewCount }}개</span>
+          <span v-if="restroom.rating != null">리뷰 {{ restroom.reviewCount }}개</span>
           <span
             class="operation-status-badge"
             :class="operationStatus(restroom).className"
@@ -63,8 +95,10 @@ function operationStatus(restroom) {
           </span>
         </div>
 
-        <p class="detail-address">{{ restroom.address }}</p>
-        <p class="detail-hours">운영시간 {{ restroom.openingHours }}</p>
+        <div class="restroom-detail-meta-list">
+          <p class="detail-address">{{ restroom.address }}</p>
+          <p class="detail-hours">운영시간 {{ restroom.openingHours }}</p>
+        </div>
 
         <div class="detail-actions refined-detail-actions">
           <button
@@ -76,11 +110,12 @@ function operationStatus(restroom) {
               <path d="M4 20h4l10.7-10.7a2.1 2.1 0 0 0-3-3L5 17v3Z" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round" />
               <path d="m14.5 7.5 3 3" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" />
             </svg>
-            이 화장실 리뷰 작성
+            리뷰 쓰기
           </button>
           <button
             type="button"
             class="detail-share-button"
+            aria-label="화장실 정보 공유"
             @click="emit('share')"
           >
             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -89,58 +124,74 @@ function operationStatus(restroom) {
               <circle cx="18" cy="19" r="2.5" stroke="currentColor" stroke-width="1.8" />
               <path d="m8.2 10.8 7.6-4.5M8.2 13.2l7.6 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
             </svg>
-            공유
+            <span>공유</span>
           </button>
         </div>
       </header>
 
-      <div class="public-data-box">
-        <div class="data-box-title">
-          <strong>공공데이터 시설 정보</strong>
+      <section class="restroom-detail-section restroom-detail-facilities">
+        <div class="restroom-detail-section__heading">
+          <strong>시설 정보</strong>
           <small>기준일 {{ restroom.dataReferenceDate }}</small>
         </div>
-        <div class="facility-grid">
-          <span :class="{ unavailable: !restroom.facilities.diaperTable }">기저귀 교환대</span>
-          <span :class="{ unavailable: !restroom.facilities.accessible }">장애인용 시설</span>
-          <span :class="{ unavailable: !restroom.facilities.emergencyBell }">비상벨</span>
-          <span :class="{ unavailable: !restroom.facilities.entranceCctv }">입구 CCTV</span>
-          <span :class="{ unavailable: !restroom.facilities.open24Hours }">24시간 개방</span>
-        </div>
-        <p>실제 운영 상태는 현장 상황과 다를 수 있습니다.</p>
-      </div>
 
-      <section class="reviews-section">
-        <div class="reviews-heading">
+        <div v-if="availableFacilities.length" class="facility-list-refined">
+          <span v-for="facility in availableFacilities" :key="facility">
+            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="m5 10 3 3 7-7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            {{ facility }}
+          </span>
+        </div>
+        <p v-else class="facility-empty">확인된 편의시설 정보가 없습니다.</p>
+
+        <p class="restroom-detail-data-note">공공데이터 기준 정보이며 실제 현장 상황과 다를 수 있습니다.</p>
+      </section>
+
+      <section class="reviews-section reviews-section--recent">
+        <div class="reviews-heading reviews-heading--recent">
           <div>
             <h3>이용자 리뷰</h3>
-            <span>{{ reviews.length }}개 표시</span>
+            <span>{{ restroom.reviewCount ?? reviews.length }}개</span>
           </div>
-          <select
-            :value="reviewSort"
-            aria-label="리뷰 정렬"
-            @change="emit('update:reviewSort', $event.target.value)"
+          <button
+            v-if="(restroom.reviewCount ?? reviews.length) > 0"
+            class="reviews-all-link"
+            type="button"
+            @click="emit('open-reviews')"
           >
-            <option value="recent">최신순</option>
-            <option value="cleanlinessHigh">청결도 높은 순</option>
-            <option value="cleanlinessLow">청결도 낮은 순</option>
-          </select>
+            전체 보기
+            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="m8 5 5 5-5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </button>
         </div>
 
         <p v-if="reviewsLoading" class="search-state">리뷰를 불러오는 중입니다.</p>
-        <div v-else-if="!reviews.length" class="empty-review-state">
+        <div v-else-if="!reviews.length" class="empty-review-state empty-review-state--compact">
           <strong>아직 등록된 리뷰가 없습니다.</strong>
-          <p>첫 번째 리뷰를 남겨보세요.</p>
-          <button type="button" class="primary-button" @click="emit('write-review')">리뷰 작성</button>
+          <p>첫 이용 경험을 남겨 다른 방문자에게 도움을 주세요.</p>
         </div>
-        <div v-else class="review-card-list">
+        <div v-else class="review-card-list review-card-list--recent">
           <RestroomReviewCard
-            v-for="review in reviews"
+            v-for="review in recentReviews"
             :key="review.id"
             :review="review"
-            :distance-meters="restroom.distanceMeters"
-            @open-post="forwardOpenPost"
+            :show-distance="false"
+            :show-chevron="true"
+            variant="compact"
+            @open-post="emit('open-review-post', $event)"
           />
         </div>
+
+        <button
+          v-if="reviews.length > 2"
+          class="reviews-more-button"
+          type="button"
+          @click="emit('open-reviews')"
+        >
+          리뷰 {{ restroom.reviewCount ?? reviews.length }}개 모두 보기
+        </button>
       </section>
     </template>
   </section>

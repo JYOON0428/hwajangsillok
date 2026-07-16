@@ -19,7 +19,7 @@ const categories = [
   { name: '문화시설', icon: 'museum' },
   { name: '축제·공연', icon: 'ticket' },
   { name: '쇼핑', icon: 'shopping' },
-  { name: '일반 게시판', icon: 'document' },
+  { name: '일반 게시판', label: '일반', icon: 'document' },
   { name: '자유게시판', icon: 'chat' },
 ]
 </script>
@@ -83,7 +83,7 @@ const categories = [
         </svg>
       </span>
 
-      <strong>{{ category.name }}</strong>
+      <strong>{{ category.label || category.name }}</strong>
     </button>
   </div>
 </template>

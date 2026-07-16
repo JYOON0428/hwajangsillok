@@ -1,11 +1,8 @@
 <script setup>
 import { onMounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
 import { searchRestrooms } from '../services/locationApi'
 import RestroomMapPanel from './RestroomMapPanel.vue'
 import NearbyRestroomCard from './NearbyRestroomCard.vue'
-
-const router = useRouter()
 
 const FIXED_NEARBY_LOCATION = {
   label: '역삼역 멀티캠퍼스',
@@ -19,6 +16,7 @@ const restrooms = ref([])
 const loading = ref(false)
 const initialized = ref(false)
 const error = ref('')
+const selectedRestroomId = ref(null)
 
 const radiusOptions = [200, 500, 1000]
 let requestSequence = 0
@@ -54,18 +52,11 @@ async function load() {
 function changeRadius(option) {
   if (radius.value === option) return
   radius.value = option
+  selectedRestroomId.value = null
 }
 
-function openRestroomInSearch(restroomId) {
-  router.push({
-    name: 'search',
-    query: {
-      q: FIXED_NEARBY_LOCATION.keyword,
-      radius: radius.value,
-      source: 'nearby-map',
-      restroomId,
-    },
-  })
+function selectRestroom(restroomId) {
+  selectedRestroomId.value = Number(restroomId)
 }
 
 watch(radius, load)
@@ -132,18 +123,22 @@ onMounted(load)
           <RestroomMapPanel
             class="nearby-kakao-map"
             :restrooms="restrooms"
+            :selected-id="selectedRestroomId"
             :anchor-location="FIXED_NEARBY_LOCATION"
             :show-research-button="false"
-            @select="openRestroomInSearch"
+            :result-count="restrooms.length"
+            @select="selectRestroom"
           />
 
-          <div class="nearby-list">
+          <div class="nearby-list nearby-home-list">
             <NearbyRestroomCard
               v-for="restroom in restrooms.slice(0, 3)"
               :key="restroom.id"
               :restroom="restroom"
               :radius="radius"
               :origin-keyword="FIXED_NEARBY_LOCATION.keyword"
+              :selected="selectedRestroomId === Number(restroom.id)"
+              @select="selectRestroom"
             />
 
             <p v-if="!restrooms.length && !error" class="state-message">

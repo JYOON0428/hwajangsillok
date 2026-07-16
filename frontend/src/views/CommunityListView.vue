@@ -10,7 +10,7 @@ const route = useRoute()
 const router = useRouter()
 
 const allowedCategories = ['전체', '관광지', '문화시설', '축제·공연', '쇼핑', '일반 게시판', '자유게시판']
-const allowedSorts = ['recent', 'popular', 'comments']
+const allowedSorts = ['recent', 'popular']
 const pageSize = 10
 
 const category = ref('전체')
@@ -26,15 +26,25 @@ const notice = ref('')
 let requestSequence = 0
 let noticeTimer = null
 
+function getCategoryLabel(value) {
+  return value === '일반 게시판' || value === '일반'
+    ? '일반'
+    : value
+}
+
 const pageTitle = computed(() =>
-  category.value === '전체' ? '커뮤니티' : category.value,
+  category.value === '전체' ? '커뮤니티' : getCategoryLabel(category.value),
+)
+
+const heroTitle = computed(() =>
+  category.value === '전체' ? '커뮤니티' : `${getCategoryLabel(category.value)} 커뮤니티`,
 )
 
 const pageDescription = computed(() => {
   if (category.value === '전체') return '장소별 이용 후기와 현장 정보를 한곳에서 확인하세요.'
   if (category.value === '자유게시판') return '화장실 이용과 관련된 자유로운 이야기를 나눠보세요.'
-  if (category.value === '일반 게시판') return '관광 카테고리에 속하지 않는 화장실 후기와 제보를 확인하세요.'
-  return `${category.value} 주변의 화장실 후기와 이용 정보를 확인하세요.`
+  if (category.value === '일반 게시판' || category.value === '일반') return '관광 카테고리에 속하지 않는 화장실 후기와 제보를 확인하세요.'
+  return `${getCategoryLabel(category.value)} 주변의 화장실 후기와 이용 정보를 확인하세요.`
 })
 
 const writeRoute = computed(() => ({
@@ -202,16 +212,9 @@ watch(
       <div class="page-container community-board-hero__inner">
         <div>
           <span>화장실록 커뮤니티</span>
-          <h1>{{ pageTitle }}</h1>
+          <h1>{{ heroTitle }}</h1>
           <p>{{ pageDescription }}</p>
         </div>
-
-        <RouterLink class="community-board-write" :to="writeRoute">
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="m14.5 5.5 4 4M4 20l3.8-.8L19.2 7.8a1.4 1.4 0 0 0 0-2l-1-1a1.4 1.4 0 0 0-2 0L4.8 16.2 4 20Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-          글쓰기
-        </RouterLink>
       </div>
     </section>
 
@@ -260,34 +263,34 @@ watch(
               </button>
             </form>
 
-            <div class="community-board-sort" role="tablist" aria-label="게시글 정렬">
-              <button
-                type="button"
-                role="tab"
-                :class="{ active: sort === 'recent' }"
-                :aria-selected="sort === 'recent'"
-                @click="changeSort('recent')"
-              >
-                최신순
-              </button>
-              <button
-                type="button"
-                role="tab"
-                :class="{ active: sort === 'popular' }"
-                :aria-selected="sort === 'popular'"
-                @click="changeSort('popular')"
-              >
-                인기순
-              </button>
-              <button
-                type="button"
-                role="tab"
-                :class="{ active: sort === 'comments' }"
-                :aria-selected="sort === 'comments'"
-                @click="changeSort('comments')"
-              >
-                댓글순
-              </button>
+            <div class="community-board-toolbar__actions">
+              <div class="community-board-sort" role="tablist" aria-label="게시글 정렬">
+                <button
+                  type="button"
+                  role="tab"
+                  :class="{ active: sort === 'recent' }"
+                  :aria-selected="sort === 'recent'"
+                  @click="changeSort('recent')"
+                >
+                  최신순
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  :class="{ active: sort === 'popular' }"
+                  :aria-selected="sort === 'popular'"
+                  @click="changeSort('popular')"
+                >
+                  인기순
+                </button>
+              </div>
+
+              <RouterLink class="community-board-toolbar__write" :to="writeRoute">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="m14.5 5.5 4 4M4 20l3.8-.8L19.2 7.8a1.4 1.4 0 0 0 0-2l-1-1a1.4 1.4 0 0 0-2 0L4.8 16.2 4 20Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                리뷰 쓰기
+              </RouterLink>
             </div>
           </section>
 
@@ -339,8 +342,7 @@ watch(
               </svg>
             </span>
             <strong>조건에 맞는 게시글이 없습니다.</strong>
-            <p>검색어를 바꾸거나 첫 글을 작성해보세요.</p>
-            <RouterLink :to="writeRoute">글쓰기</RouterLink>
+            <p>검색어나 카테고리를 변경해보세요.</p>
           </div>
 
           <PaginationBar
